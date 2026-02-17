@@ -1,0 +1,246 @@
+local ADDON_NAME, NS = ...;
+
+-------------------------------------------------------------------------------
+-- Module namespace (shared across AbraaRaidCooldown files via addon table)
+-------------------------------------------------------------------------------
+
+local ST = {};
+NS.SpellTracker = ST;
+
+-- Tracked player data
+ST.trackedPlayers = {};   -- "Name-Realm" -> { class, spec, spells = { [spellID] = state } }
+ST.excludedPlayers = {};  -- "Name-Realm" -> true
+ST._recentCasts = {};     -- "Name" -> GetTime() of last cast (for interrupt correlation)
+
+-- Player info
+ST.playerClass = nil;
+ST.playerName = nil;
+
+-- DB reference (set on init)
+ST.db = nil;
+
+-------------------------------------------------------------------------------
+-- Print Helper
+-------------------------------------------------------------------------------
+
+function ST:Print(msg)
+    print("|cFF33FF99[Abraa Raid CD]|r " .. tostring(msg))
+end
+
+local function IsAddonOutdated()
+    local tocInterface = nil;
+    if (C_AddOns and C_AddOns.GetAddOnMetadata) then
+        tocInterface = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Interface");
+    elseif (GetAddOnMetadata) then
+        tocInterface = GetAddOnMetadata(ADDON_NAME, "Interface");
+    end
+    if (not tocInterface) then return false; end
+
+    -- Parse highest supported interface from .toc (e.g. "120000, 120001" → 120001)
+    local maxToc = 0;
+    for num in tostring(tocInterface):gmatch("(%d+)") do
+        local n = tonumber(num);
+        if (n and n > maxToc) then maxToc = n; end
+    end
+
+    -- Current client interface version
+    local clientInterface = select(4, GetBuildInfo()) or 0;
+    -- Compare major version (first 2 digits = expansion.major)
+    -- e.g. toc 120001, client 120100 → outdated
+    return clientInterface > maxToc;
+end
+
+function ST:PrintWelcome()
+    ST:Print("Abraa Raid Cooldown — Menu: /arc");
+    if (IsAddonOutdated()) then
+        print("|cFFFF9900[Abraa Raid CD] WARNING:|r Addon may be outdated for this game version. Some features might not work correctly.");
+    end
+end
+
+-------------------------------------------------------------------------------
+-- DB Defaults
+-------------------------------------------------------------------------------
+
+local DEFAULTS = {
+    frames = {},  -- array of custom frame configs
+    interruptFrame = nil,
+    profiles = {},
+    activeProfile = nil,
+};
+
+local FRAME_DEFAULTS = {
+    name         = "New Frame",
+    spells       = {},        -- { [spellID] = true, ... }
+    enabled      = true,
+    layout       = "bar",     -- "bar" or "icon"
+    locked       = false,
+    position     = nil,
+    barWidth     = 220,
+    barHeight    = 28,
+    barAlpha     = 0.9,
+    displayScale = 1.0,
+    iconSize     = 28,
+    iconSpacing  = 2,
+    hideOutOfCombat = false,
+    groupMode    = "any",    -- "any" | "party" | "raid"
+    showNames    = true,
+    growUp       = false,
+    showSelf     = true,
+    sortMode     = "remaining",
+    selfOnTop    = false,
+    font         = "Friz Quadrata TT",
+    fontOutline  = "OUTLINE",
+};
+ST.FRAME_DEFAULTS = FRAME_DEFAULTS;
+
+local INTERRUPT_FRAME_DEFAULTS = {
+    name            = "Interrupts",
+    spells          = {},        -- interrupt-only selection
+    enabled         = false,
+    layout          = "bar",
+    locked          = false,
+    position        = { point = "CENTER", relativePoint = "CENTER", x = 0, y = 0, isTitleAnchor = true },
+    barWidth        = 220,
+    barHeight       = 28,
+    barAlpha        = 0.9,
+    displayScale    = 1.0,
+    iconSize        = 28,
+    iconSpacing     = 2,
+    hideOutOfCombat = false,
+    groupMode       = "any",     -- "any" | "party" | "raid"
+    showNames       = true,
+    growUp          = false,
+    showSelf        = true,
+    sortMode        = "remaining",
+    selfOnTop       = false,
+    font            = "Friz Quadrata TT",
+    fontOutline     = "OUTLINE",
+    isInterruptFrame = true,
+};
+
+local function getDB()
+    if (not _G.AbraaRaidCooldownDB) then _G.AbraaRaidCooldownDB = {}; end
+    local db = _G.AbraaRaidCooldownDB;
+    for k, v in pairs(DEFAULTS) do
+        if (db[k] == nil) then
+            if (type(v) == "table") then
+                local copy = {};
+                for dk, dv in pairs(v) do copy[dk] = dv; end
+                db[k] = copy;
+            else
+                db[k] = v;
+            end
+        end
+    end
+    ST.db = db;
+    return db;
+end
+
+function ST:GetFrameConfig(frameIndex)
+    local db = getDB();
+    if (frameIndex == "interrupts") then
+        if (not db.interruptFrame) then db.interruptFrame = {}; end
+        for k, v in pairs(INTERRUPT_FRAME_DEFAULTS) do
+            if (db.interruptFrame[k] == nil) then
+                if (type(v) == "table") then
+                    local copy = {};
+                    for dk, dv in pairs(v) do copy[dk] = dv; end
+                    db.interruptFrame[k] = copy;
+                else
+                    db.interruptFrame[k] = v;
+                end
+            end
+        end
+
+        -- First-time setup: preselect all interrupt spells for the dedicated frame.
+        if (not db.interruptFrame._initializedInterrupts) then
+            db.interruptFrame.spells = db.interruptFrame.spells or {};
+            for spellID, spell in pairs(ST.spellDB or {}) do
+                if (spell.category == "interrupt") then
+                    db.interruptFrame.spells[spellID] = true;
+                end
+            end
+            db.interruptFrame._initializedInterrupts = true;
+        end
+        if (db.interruptFrame.position and db.interruptFrame.position.isTitleAnchor == nil) then
+            db.interruptFrame.position.point = "CENTER";
+            db.interruptFrame.position.relativePoint = "CENTER";
+            db.interruptFrame.position.isTitleAnchor = true;
+        end
+        db.interruptFrame.name = "Interrupts";
+        return db.interruptFrame;
+    else
+        local frameConfig = db.frames[frameIndex];
+        if (not frameConfig) then return nil; end
+        -- Apply defaults for missing fields
+        for k, v in pairs(FRAME_DEFAULTS) do
+            if (frameConfig[k] == nil) then
+                if (type(v) == "table") then
+                    local copy = {};
+                    for dk, dv in pairs(v) do copy[dk] = dv; end
+                    frameConfig[k] = copy;
+                else
+                    frameConfig[k] = v;
+                end
+            end
+        end
+        return frameConfig;
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Init / Enable / Disable
+-------------------------------------------------------------------------------
+
+function ST:Init()
+    getDB();
+end
+
+function ST:Enable()
+    getDB();
+
+    -- Always start with preview disabled after login/reload.
+    if (ST.DeactivatePreview) then
+        ST:DeactivatePreview();
+    else
+        ST._previewActive = false;
+    end
+
+    local _, cls = UnitClass("player");
+    ST.playerClass = cls;
+    ST.playerName = UnitName("player");
+
+    -- Engine.lua handles the rest (events, detection, display)
+    if (ST.EnableEngine) then
+        ST:EnableEngine();
+    end
+end
+
+function ST:Disable()
+    if (ST.DisableEngine) then
+        ST:DisableEngine();
+    end
+
+    ST.trackedPlayers = {};
+    ST.excludedPlayers = {};
+end
+
+-------------------------------------------------------------------------------
+-- Bootstrap
+-------------------------------------------------------------------------------
+
+local loader = CreateFrame("Frame");
+loader:RegisterEvent("ADDON_LOADED");
+loader:SetScript("OnEvent", function(self, event, addonName)
+    if (event == "ADDON_LOADED") then
+        if (addonName ~= ADDON_NAME) then return; end
+        self:UnregisterEvent("ADDON_LOADED");
+        self:RegisterEvent("PLAYER_LOGIN");
+
+        ST:Init();
+        ST:Enable();
+    elseif (event == "PLAYER_LOGIN") then
+        self:UnregisterEvent("PLAYER_LOGIN");
+        ST:PrintWelcome();
+    end
+end);
