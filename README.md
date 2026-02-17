@@ -237,7 +237,7 @@ AbraaRaidCooldownDB = {
 
 ### Compatibility
 
-- **World of Warcraft 12.0+** (The War Within) — handles Blizzard API secret values
+- **World of Warcraft 12.0+** (Midnight) — handles Blizzard API secret values
 - **LibSharedMedia-3.0** — optional, for custom fonts
 - **Addon Channel "ARC"** — cross-player communication for shared interrupt data
 - **Outdated version warning** — automatic detection on login if game client is newer than addon's declared interface
