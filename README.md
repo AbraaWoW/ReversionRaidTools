@@ -1,11 +1,11 @@
-# Abraa Raid Cooldown
+# AbraaRaidCooldown
 
 Fully customizable raid and party cooldown tracking addon for World of Warcraft.
 
 Create multiple independent frames to monitor defensives, offensives and interrupts from your group in real time.
 
 ![Interface](https://img.shields.io/badge/Interface-12.0.0%20%2F%2012.0.1-blue)
-![Expansion](https://img.shields.io/badge/The%20War%20Within-Season%201-orange)
+![Expansion](https://img.shields.io/badge/Midnight-Season%201-orange)
 
 ---
 
@@ -39,12 +39,6 @@ Create multiple independent frames to monitor defensives, offensives and interru
 | Command | Description |
 |---|---|
 | `/arc` | Toggle the options panel |
-| `/arc preview` | Toggle preview mode (group of 5) |
-| `/arc preview group` | Preview with a 5-player group |
-| `/arc preview raid20` | Preview with a 20-player raid |
-| `/arc preview raid40` | Preview with a 40-player raid |
-| `/arc reset` | Reset all frame positions to center |
-| `/arc lock` | Lock/unlock all frames at once |
 
 ---
 
