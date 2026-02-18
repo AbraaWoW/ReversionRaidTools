@@ -18,7 +18,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Demon Hunter: Disrupt
     {
@@ -28,7 +28,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Druid: Skull Bash (Feral / Guardian)
     {
@@ -38,7 +38,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "DRUID",
         specs    = { [103] = true, [104] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Druid: Solar Beam (Balance)
     {
@@ -48,7 +48,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "DRUID",
         specs    = { [102] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Evoker: Quell (Devastation / Augmentation only; Preservation lost it in 12.0)
     {
@@ -59,7 +59,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1467] = true, [1473] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Hunter: Counter Shot (BM / MM)
     {
@@ -69,7 +69,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "HUNTER",
         specs    = { [253] = true, [254] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Hunter: Muzzle (Survival)
     {
@@ -79,7 +79,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "HUNTER",
         specs    = { [255] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Mage: Counterspell
     {
@@ -89,7 +89,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "MAGE",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Monk: Spear Hand Strike (Windwalker / Brewmaster; Mistweaver lost it in 12.0)
     {
@@ -99,7 +99,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "MONK",
         specs    = { [269] = true, [268] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Paladin: Rebuke (Protection / Retribution; Holy lost it in 12.0)
     {
@@ -109,7 +109,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "PALADIN",
         specs    = { [66] = true, [70] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Priest: Silence (Shadow only)
     {
@@ -119,7 +119,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "PRIEST",
         specs    = { [258] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Rogue: Kick
     {
@@ -129,7 +129,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "ROGUE",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Shaman: Wind Shear (12s base, 30s for Resto)
     {
@@ -140,7 +140,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "SHAMAN",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Warlock: Spell Lock (Felhunter — Affliction / Destruction)
     {
@@ -150,7 +150,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [265] = true, [267] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Warlock: Spell Lock (Felhunter alt ID — Affliction / Destruction)
     {
@@ -160,7 +160,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [265] = true, [267] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Warlock: Axe Toss (Felguard — Demonology)
     {
@@ -170,7 +170,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [266] = true },
-        category = "interrupts",
+        category = "interrupt",
     },
     -- Warrior: Pummel
     {
@@ -180,7 +180,7 @@ ST:RegisterSpells({
         charges  = nil,
         class    = "WARRIOR",
         specs    = nil,
-        category = "interrupts",
+        category = "interrupt",
     },
 });
 

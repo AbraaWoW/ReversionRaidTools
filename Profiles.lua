@@ -5,6 +5,30 @@ if (not ST) then return; end
 local DeepCopyTable = ST.DeepCopyTable;
 
 -------------------------------------------------------------------------------
+-- Auto-load Profile by Role
+-------------------------------------------------------------------------------
+
+function ST:AutoLoadProfileForCurrentRole()
+    local db = self.db;
+    if (not db or not db.autoLoad) then return; end
+    if (InCombatLockdown()) then return; end
+
+    local specIndex = GetSpecialization();
+    if (not specIndex) then return; end
+
+    local _, _, _, _, _, role = GetSpecializationInfo(specIndex);
+    if (not role or role == "NONE") then return; end
+
+    local profileName = db.autoLoad[role];
+    if (not profileName) then return; end
+    if (not db.profiles or not db.profiles[profileName]) then return; end
+    if (db.activeProfile == profileName) then return; end
+
+    self:LoadProfile(profileName);
+    self:Print("Auto-loaded profile: " .. profileName .. " (" .. role .. ")");
+end
+
+-------------------------------------------------------------------------------
 -- Save Profile
 -------------------------------------------------------------------------------
 
@@ -18,6 +42,50 @@ function ST:SaveProfile(name)
         savedAt = time(),
     };
     db.activeProfile = name;
+end
+
+-------------------------------------------------------------------------------
+-- New Profile (blank slate — no frames, default interrupt frame)
+-------------------------------------------------------------------------------
+
+function ST:NewProfile(name)
+    local db = self.db;
+    if (not db) then return; end
+
+    -- Hide and detach all current displays
+    self:HideAllDisplays();
+    for k, display in pairs(self.displayFrames) do
+        if (display.frame) then
+            display.frame:Hide();
+            display.frame:SetParent(nil);
+        end
+    end
+    wipe(self.displayFrames);
+
+    -- Reset frames to defaults: one default frame
+    wipe(db.frames);
+    self:CreateCustomFrame("New Frame");
+
+    -- Reset interrupt frame to defaults
+    db.interruptFrame = nil;
+    self:GetFrameConfig("interrupts");
+
+    -- Deactivate preview if active
+    if (self._previewActive and self.DeactivatePreview) then
+        self:DeactivatePreview();
+    end
+
+    -- Save default state as the new profile
+    db.profiles = db.profiles or {};
+    db.profiles[name] = {
+        frames         = DeepCopyTable(db.frames or {}),
+        interruptFrame = DeepCopyTable(db.interruptFrame or {}),
+        savedAt        = time(),
+    };
+    db.activeProfile = name;
+
+    self:RefreshDisplay();
+    self:RebuildOptions();
 end
 
 -------------------------------------------------------------------------------
@@ -128,9 +196,8 @@ function ST:ResetToDefaults()
     end
     wipe(self.displayFrames);
 
-    -- Wipe frames and create one default frame
+    -- Wipe all frames (start from zero)
     wipe(db.frames);
-    self:CreateCustomFrame("New Frame");
 
     -- Reset interrupt frame
     db.interruptFrame = nil;

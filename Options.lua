@@ -9,7 +9,7 @@ if (not ST) then return; end
 local FONT = "Fonts\\FRIZQT__.TTF";
 local FRAME_WIDTH = 1000;
 local FRAME_HEIGHT = 700;
-local FRAME_NAME = "AbraaRaidCooldownOptions";
+local FRAME_NAME = "ReversionRaidToolsOptions";
 
 local COLOR_BG          = { 0.08, 0.08, 0.08, 0.95 };
 local COLOR_SECTION     = { 0.12, 0.12, 0.12, 1.0 };
@@ -103,6 +103,9 @@ end
 
 local function SkinPanel(frame, bgColor, borderColor)
     if (not frame) then return; end
+    if (not frame.SetBackdrop) then
+        Mixin(frame, BackdropTemplateMixin);
+    end
     frame:SetBackdrop({
         bgFile   = "Interface\\BUTTONS\\WHITE8X8",
         edgeFile = "Interface\\BUTTONS\\WHITE8X8",
@@ -501,19 +504,17 @@ local function BuildFrameSpells(content, frameIndex, yOff)
 
     local selectedSpells = frameConfig.spells;
 
-    -- Organize spells by class then by category
+    -- Organize spells by class then by category (interrupts excluded)
     local spellsByClass = {};
     for id, spell in pairs(ST.spellDB) do
-        if (spell.category == "interrupt") then
-            -- Interrupts are managed in their dedicated tab.
-        else
-        local cls = spell.class;
-        if (not spellsByClass[cls]) then spellsByClass[cls] = {}; end
-        table.insert(spellsByClass[cls], {
-            id       = id,
-            category = spell.category,
-            name     = C_Spell.GetSpellName(id) or ("Spell " .. id),
-        });
+        if (spell.category ~= "interrupt") then
+            local cls = spell.class;
+            if (not spellsByClass[cls]) then spellsByClass[cls] = {}; end
+            table.insert(spellsByClass[cls], {
+                id       = id,
+                category = spell.category,
+                name     = C_Spell.GetSpellName(id) or ("Spell " .. id),
+            });
         end
     end
 
@@ -864,9 +865,23 @@ local function BuildFrameInterrupts(content, frameIndex, yOff)
     end));
     yOff = yOff - 44;
 
-    Track(CreateActionButton(content, PADDING + 4, yOff, "Reset Position", 140, function()
+    Track(CreateActionButton(content, PADDING + 4, yOff, "Reset", 80, function()
         ST:ResetPosition(interruptKey);
         ST:Print("Interrupts position reset.");
+    end));
+    local testLabel = ST._intTestActive and "Disable Test" or "Test";
+    Track(CreateActionButton(content, PADDING + 4 + 88, yOff, testLabel, 100, function()
+        if (ST._intTestActive) then
+            ST._intTestActive = nil;
+            ST:DeactivatePreview();
+            ST:Print("Test disabled.");
+        else
+            ST._intTestActive = true;
+            if (ST.SetPreviewMode) then ST:SetPreviewMode("party5"); end
+            ST:ActivatePreview();
+            ST:Print("Test enabled (Interrupts only).");
+        end
+        if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
     end));
     yOff = yOff - ROW_HEIGHT - 10;
 
@@ -1118,46 +1133,6 @@ BuildContent = function()
         local intY = yOff;
 
         -- Preview button for interrupts
-        local intFrameConfig = ST:GetFrameConfig("interrupts");
-        local previewLabel = ST._previewActive and "Disable Preview" or "Preview (5)";
-        Track(CreateActionButton(content, PADDING + 4, intY, previewLabel, 130, function()
-            if (ST._previewActive) then
-                ST:DeactivatePreview();
-                -- Restore enabled state if we forced it on
-                if (ST._intPreviewForced) then
-                    local ifc = ST:GetFrameConfig("interrupts");
-                    if (ifc) then ifc.enabled = false; end
-                    ST._intPreviewForced = nil;
-                    ST:RefreshDisplay();
-                end
-                ST:Print("Preview disabled.");
-            else
-                -- Enable interrupt frame temporarily if disabled
-                local ifc = ST:GetFrameConfig("interrupts");
-                if (ifc and not ifc.enabled) then
-                    ifc.enabled = true;
-                    ST._intPreviewForced = true;
-                end
-                -- Disable all custom frames so only interrupts show
-                local savedStates = {};
-                if (db.frames) then
-                    for i, fc in ipairs(db.frames) do
-                        savedStates[i] = fc.enabled;
-                        fc.enabled = false;
-                    end
-                end
-                ST._intPreviewSavedFrameStates = savedStates;
-
-                if (ST.SetPreviewMode) then ST:SetPreviewMode("party5"); end
-                ST:ActivatePreview();
-                ST:Print("Preview enabled (Interrupts only).");
-            end
-            if (_optionsFrame and _optionsFrame:IsShown()) then
-                BuildContent();
-            end
-        end));
-        intY = intY - ROW_HEIGHT - 8;
-
         intY = BuildFrameInterrupts(content, "interrupts", intY);
         local contentHeight = math.max(64, math.abs(intY) + PADDING + 40);
         content:SetHeight(contentHeight);
@@ -1272,10 +1247,6 @@ BuildContent = function()
         delText:SetText("X");
 
         delBtn:SetScript("OnClick", function()
-            if (#db.frames <= 1) then
-                ST:Print("At least one frame is required.");
-                return;
-            end
             ST:DeleteCustomFrame(fIdx);
             local newTabs = {};
             for idx, v in pairs(_frameTabs) do
@@ -1485,11 +1456,16 @@ local function CreateOptionsFrame()
     titleAccent:SetTexture("Interface\\BUTTONS\\WHITE8X8");
     titleAccent:SetVertexColor(unpack(COLOR_ACCENT));
 
+    local titleLogo = titleBar:CreateTexture(nil, "ARTWORK");
+    titleLogo:SetSize(22, 22);
+    titleLogo:SetPoint("LEFT", 8, 0);
+    titleLogo:SetTexture("Interface\\AddOns\\ReversionRaidTools\\logo");
+
     local titleText = titleBar:CreateFontString(nil, "OVERLAY");
     titleText:SetFont(FONT, 14, "OUTLINE");
-    titleText:SetPoint("LEFT", 12, 0);
+    titleText:SetPoint("LEFT", 36, 0);
     titleText:SetTextColor(unpack(COLOR_ACCENT));
-    titleText:SetText("Abraa Raid Cooldown");
+    titleText:SetText("Reversion Raid Tools");
 
     local closeBtn = CreateFrame("Button", nil, titleBar);
     closeBtn:SetSize(20, 20);
@@ -1505,6 +1481,51 @@ local function CreateOptionsFrame()
     closeBtn:SetScript("OnEnter", function() closeText:SetTextColor(1, 1, 1); end);
     closeBtn:SetScript("OnLeave", function() closeText:SetTextColor(unpack(COLOR_MUTED)); end);
     closeBtn:SetScript("OnClick", function() frame:Hide(); end);
+
+    -- Scale buttons
+    local scalePlusBtn = CreateFrame("Button", nil, titleBar);
+    scalePlusBtn:SetSize(20, 20);
+    scalePlusBtn:SetPoint("RIGHT", closeBtn, "LEFT", -4, 0);
+    SkinButton(scalePlusBtn, COLOR_BTN, COLOR_BTN_HOVER);
+    local scalePlusText = scalePlusBtn:CreateFontString(nil, "OVERLAY");
+    scalePlusText:SetFont(FONT, 14);
+    scalePlusText:SetPoint("CENTER", 0, 0);
+    scalePlusText:SetTextColor(unpack(COLOR_MUTED));
+    scalePlusText:SetText("+");
+    scalePlusBtn:SetScript("OnEnter", function() scalePlusText:SetTextColor(1,1,1); end);
+    scalePlusBtn:SetScript("OnLeave", function() scalePlusText:SetTextColor(unpack(COLOR_MUTED)); end);
+
+    local scaleLabel = titleBar:CreateFontString(nil, "OVERLAY");
+    scaleLabel:SetFont(FONT, 11);
+    scaleLabel:SetWidth(40);
+    scaleLabel:SetPoint("RIGHT", scalePlusBtn, "LEFT", -2, 0);
+    scaleLabel:SetTextColor(unpack(COLOR_MUTED));
+    scaleLabel:SetText("100%");
+
+    local scaleMinusBtn = CreateFrame("Button", nil, titleBar);
+    scaleMinusBtn:SetSize(20, 20);
+    scaleMinusBtn:SetPoint("RIGHT", scaleLabel, "LEFT", -2, 0);
+    SkinButton(scaleMinusBtn, COLOR_BTN, COLOR_BTN_HOVER);
+    local scaleMinusText = scaleMinusBtn:CreateFontString(nil, "OVERLAY");
+    scaleMinusText:SetFont(FONT, 14);
+    scaleMinusText:SetPoint("CENTER", 0, 0);
+    scaleMinusText:SetTextColor(unpack(COLOR_MUTED));
+    scaleMinusText:SetText("−");
+    scaleMinusBtn:SetScript("OnEnter", function() scaleMinusText:SetTextColor(1,1,1); end);
+    scaleMinusBtn:SetScript("OnLeave", function() scaleMinusText:SetTextColor(unpack(COLOR_MUTED)); end);
+
+    local function ApplyUIScale(delta)
+        local db = ST.db;
+        if not db then return; end
+        local current = math.floor((db.uiScale or 1.0) * 10 + 0.5);
+        current = math.max(7, math.min(15, current + delta));
+        db.uiScale = current / 10;
+        frame:SetScale(db.uiScale);
+        scaleLabel:SetText(math.floor(db.uiScale * 100) .. "%");
+    end;
+
+    scalePlusBtn:SetScript("OnClick", function() ApplyUIScale(1); end);
+    scaleMinusBtn:SetScript("OnClick", function() ApplyUIScale(-1); end);
 
     -- Scrollable content
     local scrollFrame = CreateFrame("ScrollFrame", nil, frame);
@@ -1529,6 +1550,11 @@ local function CreateOptionsFrame()
     frame:SetScript("OnShow", function()
         BuildContent();
     end);
+
+    -- Apply saved UI scale
+    local initScale = (ST.db and ST.db.uiScale) or 1.0;
+    frame:SetScale(initScale);
+    scaleLabel:SetText(math.floor(initScale * 100) .. "%");
 
     frame:Hide();
     _optionsFrame = frame;
@@ -1572,6 +1598,18 @@ BuildProfilesTab = function(parent, yOff)
     Track(sideTitle);
     sideY = sideY - 24;
 
+    -- Quick Save to active profile (Option B)
+    if (db.activeProfile and db.profiles[db.activeProfile]) then
+        local shortName = db.activeProfile;
+        if (#shortName > 12) then shortName = shortName:sub(1, 11) .. "…"; end
+        Track(CreateActionButton(sidebar, 8, sideY, "Save  [" .. shortName .. "]", SIDEBAR_WIDTH - 16, function()
+            ST:SaveProfile(db.activeProfile);
+            ST:Print("Saved: " .. db.activeProfile);
+            BuildContent();
+        end, { 0.1, 0.28, 0.1, 1 }));
+        sideY = sideY - ROW_HEIGHT - 8;
+    end
+
     -- "New Profile" button
     -- Auto-suggest a free name
     if (not _profileDraftName or _profileDraftName == "" or db.profiles[_profileDraftName]) then
@@ -1598,16 +1636,21 @@ BuildProfilesTab = function(parent, yOff)
     Track(newProfileInput);
     sideY = sideY - 24;
 
-    Track(CreateActionButton(sidebar, 8, sideY, "+ Save New Profile", SIDEBAR_WIDTH - 16, function()
+    Track(CreateActionButton(sidebar, 8, sideY, "Create Profile", SIDEBAR_WIDTH - 16, function()
         local name = strtrim(_profileDraftName or "");
         if (name == "") then
             ST:Print("Profile name is required.");
             return;
         end
-        ST:SaveProfile(name);
-        ST:Print("Profile saved: " .. name);
+        if (db.profiles and db.profiles[name]) then
+            ST:Print("A profile named '" .. name .. "' already exists.");
+            return;
+        end
+        -- Create blank profile with defaults, set as active
+        ST:NewProfile(name);
+        ST:Print("Profile created: " .. name);
         _selectedProfileName = name;
-        -- Auto-increment for next save
+        -- Auto-increment for next creation
         local base = name:match("^(.-)%s*%d*$") or name;
         local idx = 1;
         db.profiles = db.profiles or {};
@@ -1615,7 +1658,6 @@ BuildProfilesTab = function(parent, yOff)
             idx = idx + 1;
         end
         _profileDraftName = base .. " " .. idx;
-        BuildContent();
     end));
     sideY = sideY - ROW_HEIGHT - 12;
 
@@ -1635,15 +1677,18 @@ BuildProfilesTab = function(parent, yOff)
         local isSelected = (_selectedProfileName == pName);
         local isActive = (db.activeProfile == pName);
 
+        -- Name button (narrowed to leave room for Load button)
+        local nameWidth = SIDEBAR_WIDTH - 16 - 46;
         local btn = CreateFrame("Button", nil, sidebar);
         btn:SetPoint("TOPLEFT", 8, sideY);
-        btn:SetSize(SIDEBAR_WIDTH - 16, 24);
+        btn:SetSize(nameWidth, 24);
         SkinButton(btn, isSelected and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
         Track(btn);
 
         local btnText = btn:CreateFontString(nil, "OVERLAY");
         btnText:SetFont(FONT, 11);
         btnText:SetPoint("LEFT", 8, 0);
+        btnText:SetPoint("RIGHT", -4, 0);
         local btnColor = isSelected and COLOR_ACCENT or COLOR_LABEL;
         btnText:SetTextColor(unpack(btnColor));
         local label = pName;
@@ -1654,6 +1699,35 @@ BuildProfilesTab = function(parent, yOff)
             _selectedProfileName = pNameCopy;
             BuildContent();
         end);
+
+        -- Quick Load button (Option A)
+        local loadBtn = CreateFrame("Button", nil, sidebar);
+        loadBtn:SetPoint("TOPLEFT", 8 + nameWidth + 4, sideY);
+        loadBtn:SetSize(42, 24);
+        local loadBg = isActive and { 0.05, 0.18, 0.05, 1 } or { 0.1, 0.28, 0.1, 1 };
+        SkinButton(loadBtn, loadBg, { 0.15, 0.38, 0.15, 1 });
+        Track(loadBtn);
+
+        local loadText = loadBtn:CreateFontString(nil, "OVERLAY");
+        loadText:SetFont(FONT, 10, "OUTLINE");
+        loadText:SetPoint("CENTER", 0, 0);
+        if (isActive) then
+            loadText:SetTextColor(0.4, 0.7, 0.4);
+            loadText:SetText("ON");
+        else
+            loadText:SetTextColor(0.5, 1, 0.5);
+            loadText:SetText("Load");
+            loadBtn:SetScript("OnClick", function()
+                if (InCombatLockdown()) then
+                    ST:Print("Cannot load profiles during combat.");
+                    return;
+                end
+                ST:LoadProfile(pNameCopy);
+                ST:Print("Loaded: " .. pNameCopy);
+                _selectedProfileName = pNameCopy;
+                BuildContent();
+            end);
+        end
 
         sideY = sideY - 26;
     end
@@ -1825,7 +1899,46 @@ BuildProfilesTab = function(parent, yOff)
             BuildContent();
         end, { 0.4, 0.1, 0.1, 1 }));
 
-        mainY = mainY - ROW_HEIGHT - 20;
+        mainY = mainY - ROW_HEIGHT - 12;
+
+        -- Auto-load by Role
+        local autoHdr2;
+        autoHdr2, mainY = CreateSectionHeader(main, "Auto-load by Role", mainY);
+        Track(autoHdr2);
+
+        db.autoLoad = db.autoLoad or {};
+        local roleRows = {
+            { role = "HEALER",  label = "Healer" },
+            { role = "DAMAGER", label = "DPS"    },
+            { role = "TANK",    label = "Tank"   },
+        };
+        local btnW = 80;
+        local btnGap = 6;
+        for i = 1, #roleRows do
+            local rr = roleRows[i];
+            local roleCopy = rr.role;
+            local isAssigned = (db.autoLoad[rr.role] == selName);
+            local roleBtn = CreateFrame("Button", nil, main);
+            roleBtn:SetPoint("TOPLEFT", PADDING + (btnW + btnGap) * (i - 1), mainY);
+            roleBtn:SetSize(btnW, ROW_HEIGHT);
+            SkinButton(roleBtn, isAssigned and { 0.1, 0.32, 0.1, 1 } or COLOR_BTN, COLOR_BTN_HOVER);
+            Track(roleBtn);
+            local roleTxt = roleBtn:CreateFontString(nil, "OVERLAY");
+            roleTxt:SetFont(FONT, 11, "OUTLINE");
+            roleTxt:SetPoint("CENTER", 0, 0);
+            roleTxt:SetTextColor(unpack(isAssigned and { 0.4, 1, 0.4 } or COLOR_LABEL));
+            roleTxt:SetText(isAssigned and (rr.label .. " *") or rr.label);
+            roleBtn:SetScript("OnClick", function()
+                db.autoLoad = db.autoLoad or {};
+                if (isAssigned) then
+                    db.autoLoad[roleCopy] = nil;
+                else
+                    db.autoLoad[roleCopy] = selName;
+                end
+                BuildContent();
+            end);
+        end
+        mainY = mainY - ROW_HEIGHT - 12;
 
         -- Import / Export section
         local secHeader;
@@ -1916,6 +2029,8 @@ end
 
 function ST:ToggleOptions()
     local frame = CreateOptionsFrame();
+    local s = (ST.db and ST.db.uiScale) or 1.0;
+    frame:SetScale(s);
     if (frame:IsShown()) then
         frame:Hide();
     else
@@ -1927,8 +2042,8 @@ end
 -- Slash Command: /arc
 -------------------------------------------------------------------------------
 
-SLASH_ABRAARAIDCOOLDOWN1 = "/arc";
-SlashCmdList["ABRAARAIDCOOLDOWN"] = function(msg)
+SLASH_REVERSIONRAIDTOOLS1 = "/arc";
+SlashCmdList["REVERSIONRAIDTOOLS"] = function(msg)
     msg = strtrim(msg or ""):lower();
 
     if (msg == "preview" or msg == "preview group" or msg == "preview raid20" or msg == "preview raid40") then

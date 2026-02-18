@@ -1,4 +1,4 @@
-# AbraaRaidCooldown
+# ReversionRaidTools
 
 Fully customizable raid and party cooldown tracking addon for World of Warcraft.
 
@@ -12,7 +12,7 @@ Create multiple independent frames to monitor defensives, offensives and interru
 ## Installation
 
 1. Download or clone this repository
-2. Place the `AbraaRaidCooldown` folder into:
+2. Place the `ReversionRaidTools` folder into:
    ```
    World of Warcraft/_retail_/Interface/AddOns/
    ```
@@ -194,10 +194,10 @@ Full-width dedicated panel:
 
 ### Saved Variables
 
-All data is stored in `AbraaRaidCooldownDB`:
+All data is stored in `ReversionRaidToolsDB`:
 
 ```lua
-AbraaRaidCooldownDB = {
+ReversionRaidToolsDB = {
     frames = {                       -- Custom frames (array)
         [1] = {
             name = "Defensives",
@@ -254,8 +254,8 @@ AbraaRaidCooldownDB = {
 ### File Structure
 
 ```
-AbraaRaidCooldown/
-├── AbraaRaidCooldown.toc        Addon manifest
+ReversionRaidTools/
+├── ReversionRaidTools.toc        Addon manifest
 ├── Core.lua                      Initialization, database, defaults, version check
 ├── Engine.lua                    Event handling, group management, spell detection
 ├── Frames.lua                    Custom frame creation and deletion

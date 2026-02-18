@@ -11,7 +11,7 @@ function ST._BuildIconFrame(frameIndex)
     local frameConfig = ST:GetFrameConfig(frameIndex);
     if (not frameConfig) then return; end
 
-    local frame = CreateFrame("Frame", "AbraaRaidCooldown_Frame" .. frameIndex, UIParent);
+    local frame = CreateFrame("Frame", "ReversionRaidTools_Frame" .. frameIndex, UIParent);
     frame:SetSize(200, 200);
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, -150);
     frame:SetFrameStrata("MEDIUM");

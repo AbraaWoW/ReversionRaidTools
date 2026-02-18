@@ -23,7 +23,7 @@ local spells = {
         charges  = nil,
         class    = "WARRIOR",
         specs    = { [72] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Avatar
     {
@@ -33,7 +33,7 @@ local spells = {
         charges  = nil,
         class    = "WARRIOR",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Thunderous Roar
     {
@@ -43,7 +43,7 @@ local spells = {
         charges  = nil,
         class    = "WARRIOR",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ravager (Arms / Protection)
     {
@@ -53,7 +53,7 @@ local spells = {
         charges  = nil,
         class    = "WARRIOR",
         specs    = { [71] = true, [73] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Champion's Spear
     {
@@ -63,7 +63,7 @@ local spells = {
         charges  = nil,
         class    = "WARRIOR",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -79,7 +79,7 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = { [65] = true, [66] = true, [70] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Aura Mastery (Holy)
     {
@@ -89,7 +89,7 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = { [65] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Lay on Hands
     {
@@ -99,7 +99,7 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Blessing of Sacrifice
     {
@@ -109,7 +109,7 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -124,7 +124,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = { [251] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Dark Transformation (Unholy)
     {
@@ -134,7 +134,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = { [252] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Army of the Dead (Unholy)
     {
@@ -144,7 +144,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = { [252] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Empower Rune Weapon (Frost)
     {
@@ -154,7 +154,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = { [251] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Abomination Limb
     {
@@ -164,7 +164,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Gorefiend's Grasp (Blood)
     {
@@ -174,7 +174,7 @@ local spells = {
         charges  = nil,
         class    = "DEATHKNIGHT",
         specs    = { [250] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ local spells = {
         charges  = nil,
         class    = "ROGUE",
         specs    = { [260] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Shadow Blades (Subtlety)
     {
@@ -199,7 +199,7 @@ local spells = {
         charges  = nil,
         class    = "ROGUE",
         specs    = { [261] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Deathmark (Assassination)
     {
@@ -209,7 +209,7 @@ local spells = {
         charges  = nil,
         class    = "ROGUE",
         specs    = { [259] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -224,7 +224,7 @@ local spells = {
         charges  = nil,
         class    = "HUNTER",
         specs    = { [254] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Bestial Wrath (Beast Mastery — 30s in Midnight)
     {
@@ -234,7 +234,7 @@ local spells = {
         charges  = nil,
         class    = "HUNTER",
         specs    = { [253] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Takedown (Survival — replaces Coordinated Assault in Midnight)
     {
@@ -244,7 +244,7 @@ local spells = {
         charges  = nil,
         class    = "HUNTER",
         specs    = { [255] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -259,7 +259,7 @@ local spells = {
         charges  = nil,
         class    = "MAGE",
         specs    = { [63] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ray of Frost (Frost — replaces Icy Veins in Midnight)
     {
@@ -269,7 +269,7 @@ local spells = {
         charges  = nil,
         class    = "MAGE",
         specs    = { [64] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Arcane Surge (Arcane)
     {
@@ -279,7 +279,7 @@ local spells = {
         charges  = nil,
         class    = "MAGE",
         specs    = { [62] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -294,7 +294,7 @@ local spells = {
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [267] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Summon Darkglare (Affliction)
     {
@@ -304,7 +304,7 @@ local spells = {
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [265] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Summon Demonic Tyrant (Demonology)
     {
@@ -314,7 +314,7 @@ local spells = {
         charges  = nil,
         class    = "WARLOCK",
         specs    = { [266] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -329,7 +329,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [102] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Incarnation: Chosen of Elune (Balance — replaces Celestial Alignment, choice node with Convoke)
     {
@@ -339,7 +339,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [102] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Berserk (Feral)
     {
@@ -349,7 +349,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [103] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Incarnation: Avatar of Ashamane (Feral — replaces Berserk, choice node with Convoke)
     {
@@ -359,7 +359,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [103] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Berserk (Guardian)
     {
@@ -369,7 +369,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [104] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Incarnation: Guardian of Ursoc (Guardian — replaces Berserk, choice node with Convoke)
     {
@@ -379,7 +379,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [104] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Tranquility (Restoration)
     {
@@ -389,7 +389,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [105] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Incarnation: Tree of Life (Restoration)
     {
@@ -399,7 +399,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [105] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Convoke the Spirits (all specs — choice node with Incarnation)
     {
@@ -409,7 +409,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ironbark (Restoration — external)
     {
@@ -419,7 +419,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [105] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -434,7 +434,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Invoke Niuzao, the Black Ox (Brewmaster)
     {
@@ -444,7 +444,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [268] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Zenith (Windwalker — replaces Storm, Earth, and Fire in Midnight)
     {
@@ -454,7 +454,7 @@ local spells = {
         charges  = 2,
         class    = "MONK",
         specs    = { [269] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Invoke Xuen, the White Tiger (Windwalker — Conduit of the Celestials hero talent)
     {
@@ -464,7 +464,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [269] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Revival (Mistweaver)
     {
@@ -474,7 +474,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Restoral (Mistweaver — choice node with Revival)
     {
@@ -484,7 +484,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Invoke Yu'lon, the Jade Serpent (Mistweaver)
     {
@@ -494,7 +494,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Invoke Chi-Ji, the Red Crane (Mistweaver — choice node with Yu'lon)
     {
@@ -504,7 +504,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Life Cocoon (Mistweaver — external)
     {
@@ -514,7 +514,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -529,7 +529,7 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [577] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Void Metamorphosis (Devourer — no fixed CD, triggered by 50 soul fragments)
     {
@@ -539,7 +539,7 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [1480] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- The Hunt (Havoc)
     {
@@ -549,7 +549,7 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [577] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- The Hunt (Devourer)
     {
@@ -559,7 +559,7 @@ local spells = {
         charges  = nil,
         class    = "DEMONHUNTER",
         specs    = { [1480] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -574,7 +574,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [258] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Power Infusion (all specs — external buff)
     {
@@ -584,7 +584,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Divine Hymn (Holy)
     {
@@ -594,7 +594,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Apotheosis (Holy)
     {
@@ -604,7 +604,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Guardian Spirit (Holy — external)
     {
@@ -614,7 +614,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Symbol of Hope (Holy — party CD recovery + mana)
     {
@@ -624,7 +624,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Rapture (Discipline)
     {
@@ -634,7 +634,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Pain Suppression (Discipline — external)
     {
@@ -644,7 +644,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Power Word: Barrier (Discipline — choice node with Ultimate Penitence)
     {
@@ -654,7 +654,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ultimate Penitence (Discipline — choice node with PW:Barrier)
     {
@@ -664,7 +664,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -679,7 +679,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [262] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Doom Winds (Enhancement — choice node with Ascendance)
     {
@@ -689,7 +689,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [263] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ascendance (Enhancement — choice node with Doom Winds)
     {
@@ -699,7 +699,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [263] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Healing Tide Totem (Restoration — choice node with Ascendance)
     {
@@ -709,7 +709,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Ascendance (Restoration — choice node with Healing Tide Totem)
     {
@@ -719,7 +719,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Spirit Link Totem (Restoration)
     {
@@ -729,7 +729,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 
     ---------------------------------------------------------------------------
@@ -744,7 +744,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1467] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Rewind (Preservation — 240s base, 120s with Temporal Artificer)
     {
@@ -754,7 +754,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1468] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Tip the Scales
     {
@@ -764,7 +764,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = nil,
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Breath of Eons (Augmentation)
     {
@@ -774,7 +774,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1473] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Dream Flight (Preservation — choice node with Stasis)
     {
@@ -784,7 +784,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1468] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
     -- Stasis (Preservation — choice node with Dream Flight)
     {
@@ -794,7 +794,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1468] = true },
-        category = "cooldowns",
+        category = "cooldown",
     },
 };
 

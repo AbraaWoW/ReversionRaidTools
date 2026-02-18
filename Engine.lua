@@ -729,7 +729,7 @@ end);
 -- Communication
 -------------------------------------------------------------------------------
 
-local COMM_PREFIX = "ARC";
+local COMM_PREFIX = "RRT";
 local lastJoinBroadcast = 0;
 
 local function SendMessage(payload)
@@ -766,6 +766,27 @@ local function BroadcastJoin()
     if (not kickID) then return; end
 
     SendMessage("J:" .. ST.playerClass .. ":" .. kickID .. ":" .. (kickCd or 15));
+
+    -- Also broadcast current CD states for all tracked spells
+    for spellID, spellState in pairs(player.spells) do
+        local remaining = spellState.cdEnd - now;
+        if (remaining > 1) then
+            SendMessage("C:" .. spellID .. ":" .. string.format("%.1f", remaining));
+        end
+    end
+end
+
+local function BroadcastCast(resolvedID)
+    local name = ST.playerName;
+    if (not name) then return; end
+    local player = ST.trackedPlayers[name];
+    if (not player) then return; end
+    local spellState = player.spells[resolvedID];
+    if (not spellState) then return; end
+    local remaining = spellState.cdEnd - GetTime();
+    if (remaining > 1) then
+        SendMessage("C:" .. resolvedID .. ":" .. string.format("%.1f", remaining));
+    end
 end
 
 local function HandleAddonMessage(_, event, prefix, message, channel, sender)
@@ -797,14 +818,28 @@ local function HandleAddonMessage(_, event, prefix, message, channel, sender)
         if (not sid or not cd or cd <= 0) then return; end
 
         local player = ST.trackedPlayers[shortName];
+        if (not player) then
+            -- Player not yet registered — try to register them
+            local unit = nil;
+            local units = GroupUnitIterator();
+            for _, u in ipairs(units) do
+                if (Ambiguate(UnitName(u) or "", "short") == shortName) then
+                    unit = u; break;
+                end
+            end
+            if (unit) then
+                local _, cls = UnitClass(unit);
+                if (cls) then RegisterPlayer(shortName, cls); end
+                player = ST.trackedPlayers[shortName];
+            end
+        end
         if (not player) then return; end
 
         local spellState = player.spells[sid];
-        if (spellState and spellState.category == "interrupt") then
+        if (spellState) then
             local now = GetTime();
             spellState.state = "cooldown";
             spellState.cdEnd = now + cd;
-            spellState.baseCd = cd;
         end
     end
 end
@@ -848,6 +883,12 @@ function ST:EnableEngine()
             C_Timer.After(2, function() RegisterGroupByClass(); QueueInspects(); end);
             C_Timer.After(5, function() RegisterGroupByClass(); QueueInspects(); end);
             C_Timer.After(10, function() RegisterGroupByClass(); QueueInspects(); end);
+            -- Auto-load profile by role on login/reload
+            C_Timer.After(3, function()
+                if (ST.AutoLoadProfileForCurrentRole) then
+                    ST:AutoLoadProfileForCurrentRole();
+                end
+            end);
         elseif (event == "UNIT_PET") then
             local unit = ...;
             RefreshGroupWatchers();
@@ -869,6 +910,12 @@ function ST:EnableEngine()
             local unit = ...;
             if (not unit or unit == "player") then
                 IdentifyPlayerSpells();
+                -- Auto-load profile for new spec/role
+                C_Timer.After(0.5, function()
+                    if (ST.AutoLoadProfileForCurrentRole) then
+                        ST:AutoLoadProfileForCurrentRole();
+                    end
+                end);
             else
                 local name = UnitName(unit);
                 if (name) then
@@ -889,8 +936,13 @@ function ST:EnableEngine()
             end
         elseif (event == "UNIT_AURA") then
             local unit = ...;
-            if (unit) then
-                -- Filter: only process tracked units
+            -- Only process friendly group units to avoid "secret value" errors
+            -- from nameplate/enemy unit tokens in WoW 12.0+
+            if (type(unit) == "string" and (
+                unit == "player" or
+                unit:sub(1, 5) == "party" or
+                unit:sub(1, 4) == "raid"
+            )) then
                 local name = UnitName(unit);
                 if (name and ST.trackedPlayers[name]) then
                     CheckUnitBuffs(unit);
@@ -923,11 +975,13 @@ function ST:EnableEngine()
             local resolvedID = ST.spellAliases[matchID] or matchID;
             if (ST.spellDB[resolvedID]) then
                 RecordSpellCast("player", resolvedID, name);
+                BroadcastCast(resolvedID);
             end
         else
             local resolvedID = ST.spellAliases[spellID] or spellID;
             if (ST.spellDB[resolvedID]) then
                 RecordSpellCast("player", resolvedID, name);
+                BroadcastCast(resolvedID);
             end
         end
     end);

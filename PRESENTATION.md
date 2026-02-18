@@ -1,9 +1,9 @@
-# Abraa Raid Cooldown
+# Reversion Raid Tools
 
 **Version:** 1.0.0
 **Author:** Abraa
 **Interface:** 12.0.0 / 12.0.1 (The War Within)
-**SavedVariables:** AbraaRaidCooldownDB
+**SavedVariables:** ReversionRaidToolsDB
 **Optional Dependency:** LibSharedMedia-3.0
 
 ---
@@ -25,8 +25,8 @@ Fully customizable raid cooldown tracking addon. Create multiple independent fra
 ## File Structure
 
 ```
-AbraaRaidCooldown/
-├── AbraaRaidCooldown.toc     -- Addon manifest
+ReversionRaidTools/
+├── ReversionRaidTools.toc     -- Addon manifest
 ├── Core.lua                   -- Initialization, database, defaults
 ├── Engine.lua                 -- Event handling, group detection
 ├── Frames.lua                 -- Custom frame creation/deletion
@@ -127,7 +127,7 @@ Simulates a group or raid with dummy players and random cooldowns to test frame 
 ### Options Panel (1000x700)
 
 ```
-┌─ Abraa Raid Cooldown ─────────────────────────── [X] ┐
+┌─ Reversion Raid Tools ────────────────────────── [X] ┐
 │                                                        │
 │  [Frames]  [Interrupts]  [Profiles]  ← Top-level tabs │
 │                                                        │
@@ -209,7 +209,7 @@ ARC1:{frames={...},interruptFrame={...}}
 ## Database Structure
 
 ```lua
-AbraaRaidCooldownDB = {
+ReversionRaidToolsDB = {
     frames = {                    -- Custom frames (array)
         [1] = {
             name = "Defensives",

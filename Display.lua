@@ -18,7 +18,7 @@ ST._ICON_POOL_SIZE = 120;  -- max spell icons across all players
 local _frameID = 0;
 function ST._FrameName(tag)
     _frameID = _frameID + 1;
-    return "ARC_" .. tag .. "_" .. _frameID;
+    return "RRT_" .. tag .. "_" .. _frameID;
 end
 
 -------------------------------------------------------------------------------
@@ -111,8 +111,8 @@ function ST._CollectSortedEntries(frameIndex)
             for spellID, spellState in pairs(player.spells) do
                 local spellData = ST.spellDB[spellID];
                 local isInterruptSpell = (spellData and spellData.category == "interrupt");
-                local allowByType = frameConfig.isInterruptFrame and isInterruptSpell or ((not frameConfig.isInterruptFrame) and (not isInterruptSpell));
-                if (allowByType and (((ST._previewActive and not frameConfig.isInterruptFrame)) or selectedSpells[spellID])) then
+                local allowByType = (frameConfig.isInterruptFrame and isInterruptSpell) or (not frameConfig.isInterruptFrame);
+                if (allowByType and ((ST._previewActive and not frameConfig.isInterruptFrame) or (ST._intTestActive and frameConfig.isInterruptFrame) or selectedSpells[spellID])) then
                     local remaining = 0;
                     if (spellState.state == "cooldown") then
                         remaining = math.max(0, spellState.cdEnd - now);
@@ -166,7 +166,7 @@ function ST._CollectPlayerFrameSpells(player, frameConfig)
         local spellData = ST.spellDB[spellID];
         local isInterruptSpell = (spellData and spellData.category == "interrupt");
         local allowByType = frameConfig.isInterruptFrame and isInterruptSpell or ((not frameConfig.isInterruptFrame) and (not isInterruptSpell));
-        if (allowByType and (((ST._previewActive and not frameConfig.isInterruptFrame)) or selectedSpells[spellID])) then
+        if (allowByType and ((ST._previewActive and not frameConfig.isInterruptFrame) or (ST._intTestActive and frameConfig.isInterruptFrame) or selectedSpells[spellID])) then
             table.insert(spells, {
                 spellID   = spellID,
                 state     = spellState.state,
@@ -353,7 +353,7 @@ function ST:RefreshDisplay()
     -- Auto-disable preview when settings panel closes
     if (ST._previewActive) then
         local panelOpen = false;
-        local arcPanel = _G["AbraaRaidCooldownOptions"];
+        local arcPanel = _G["ReversionRaidToolsOptions"];
         if (arcPanel and arcPanel:IsShown()) then panelOpen = true; end
         if (SettingsPanel and SettingsPanel:IsShown()) then panelOpen = true; end
         if (not panelOpen) then
@@ -371,15 +371,22 @@ function ST:RefreshDisplay()
 
     local function CanShowFrame(frameConfig)
         if (frameConfig.isInterruptFrame) then
-            if (not frameConfig.enabled) then return false; end
-            if (frameConfig.hideOutOfCombat and not InCombatLockdown()) then
-                return false;
+            -- Interrupt Test mode: always show the interrupt frame.
+            if (ST._intTestActive) then
+                if (frameConfig.hideOutOfCombat and not InCombatLockdown()) then return false; end
+                return true;
             end
+            -- Normal frame preview: hide the interrupt frame.
+            if (ST._previewActive) then return false; end
+            if (not frameConfig.enabled) then return false; end
+            if (frameConfig.hideOutOfCombat and not InCombatLockdown()) then return false; end
             return true;
         end
 
+        -- Interrupt Test mode: hide all normal frames.
+        if (ST._intTestActive) then return false; end
+
         if (ST._previewActive) then
-            -- In preview, show only normal custom frames from the "Frames" column.
             return true;
         end
 

@@ -1,7 +1,7 @@
 local ADDON_NAME, NS = ...;
 
 -------------------------------------------------------------------------------
--- Module namespace (shared across AbraaRaidCooldown files via addon table)
+-- Module namespace (shared across ReversionRaidTools files via addon table)
 -------------------------------------------------------------------------------
 
 local ST = {};
@@ -24,7 +24,7 @@ ST.db = nil;
 -------------------------------------------------------------------------------
 
 function ST:Print(msg)
-    print("|cFF33FF99[Abraa Raid CD]|r " .. tostring(msg))
+    print("|cFF33FF99[Reversion Raid Tools]|r " .. tostring(msg))
 end
 
 local function IsAddonOutdated()
@@ -51,9 +51,9 @@ local function IsAddonOutdated()
 end
 
 function ST:PrintWelcome()
-    ST:Print("Abraa Raid Cooldown — Menu: /arc");
+    ST:Print("Reversion Raid Tools — Menu: /arc");
     if (IsAddonOutdated()) then
-        print("|cFFFF9900[Abraa Raid CD] WARNING:|r Addon may be outdated for this game version. Some features might not work correctly.");
+        print("|cFFFF9900[Reversion Raid Tools] WARNING:|r Addon may be outdated for this game version. Some features might not work correctly.");
     end
 end
 
@@ -66,6 +66,8 @@ local DEFAULTS = {
     interruptFrame = nil,
     profiles = {},
     activeProfile = nil,
+    autoLoad = {},  -- { HEALER = "profileName", DAMAGER = "profileName", TANK = "profileName" }
+    uiScale = 1.0,
 };
 
 local FRAME_DEFAULTS = {
@@ -119,8 +121,8 @@ local INTERRUPT_FRAME_DEFAULTS = {
 };
 
 local function getDB()
-    if (not _G.AbraaRaidCooldownDB) then _G.AbraaRaidCooldownDB = {}; end
-    local db = _G.AbraaRaidCooldownDB;
+    if (not _G.ReversionRaidToolsDB) then _G.ReversionRaidToolsDB = {}; end
+    local db = _G.ReversionRaidToolsDB;
     for k, v in pairs(DEFAULTS) do
         if (db[k] == nil) then
             if (type(v) == "table") then
@@ -199,11 +201,26 @@ end
 function ST:Enable()
     getDB();
 
-    -- Always start with preview disabled after login/reload.
+    -- Always start with preview/test disabled after login/reload.
+    ST._previewActive = false;
+    ST._intTestActive = nil;
     if (ST.DeactivatePreview) then
         ST:DeactivatePreview();
-    else
-        ST._previewActive = false;
+    end
+
+    -- Safety: if ALL frames are disabled, re-enable them all.
+    -- (Can happen if a /reload occurred while the old Test button had set them all to false.)
+    local db = ST.db;
+    if (db and db.frames and #db.frames > 0) then
+        local anyEnabled = false;
+        for _, fc in ipairs(db.frames) do
+            if (fc.enabled) then anyEnabled = true; break; end
+        end
+        if (not anyEnabled) then
+            for _, fc in ipairs(db.frames) do
+                fc.enabled = true;
+            end
+        end
     end
 
     local _, cls = UnitClass("player");
