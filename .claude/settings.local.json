@@ -3,7 +3,11 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(echo:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(wsl grep:*)",
+      "Bash(wsl -e grep:*)"
     ]
   }
 }

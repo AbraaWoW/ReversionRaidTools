@@ -51,7 +51,7 @@ local function IsAddonOutdated()
 end
 
 function ST:PrintWelcome()
-    ST:Print("Reversion Raid Tools — Menu: /arc");
+    ST:Print("Reversion Raid Tools — Menu: /rrt");
     if (IsAddonOutdated()) then
         print("|cFFFF9900[Reversion Raid Tools] WARNING:|r Addon may be outdated for this game version. Some features might not work correctly.");
     end
@@ -68,6 +68,11 @@ local DEFAULTS = {
     activeProfile = nil,
     autoLoad = {},  -- { HEALER = "profileName", DAMAGER = "profileName", TANK = "profileName" }
     uiScale = 1.0,
+    battleRez   = { enabled = false, position = nil, hideOutOfCombat = false, locked = false, scale = 1.0, showWhenUnlocked = true },
+    combatTimer  = { enabled = false, position = nil, hideOutOfCombat = false, locked = false, scale = 1.0 },
+    marksBar    = { enabled = false, position = nil, locked = false, scale = 1.0, showTargetMarks = true, showWorldMarks = true, showRaidTools = true, pullTimer = 10 },
+    raidGroups   = { profiles = {}, currentSlots = {} },
+    note         = { text = "", title = "", saved = {} },
 };
 
 local FRAME_DEFAULTS = {
@@ -134,10 +139,40 @@ local function getDB()
             end
         end
     end
+
+    -- Backfill nested tool defaults for existing users (older DBs may miss keys).
+    if (type(db.battleRez) == "table") then
+        for k, v in pairs(DEFAULTS.battleRez) do
+            if (db.battleRez[k] == nil) then
+                db.battleRez[k] = v;
+            end
+        end
+    end
+    if (type(db.combatTimer) == "table") then
+        for k, v in pairs(DEFAULTS.combatTimer) do
+            if (db.combatTimer[k] == nil) then
+                db.combatTimer[k] = v;
+            end
+        end
+    end
+    if (type(db.marksBar) == "table") then
+        for k, v in pairs(DEFAULTS.marksBar) do
+            if (db.marksBar[k] == nil) then
+                db.marksBar[k] = v;
+            end
+        end
+    end
+    if (type(db.note) == "table") then
+        for k, v in pairs(DEFAULTS.note) do
+            if (db.note[k] == nil) then
+                db.note[k] = v;
+            end
+        end
+    end
+
     ST.db = db;
     return db;
 end
-
 function ST:GetFrameConfig(frameIndex)
     local db = getDB();
     if (frameIndex == "interrupts") then
@@ -261,3 +296,12 @@ loader:SetScript("OnEvent", function(self, event, addonName)
         ST:PrintWelcome();
     end
 end);
+
+
+
+
+
+
+
+
+

@@ -89,7 +89,7 @@ local spells = {
         charges  = nil,
         class    = "PALADIN",
         specs    = { [65] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Lay on Hands
     {
@@ -381,6 +381,16 @@ local spells = {
         specs    = { [104] = true },
         category = "cooldown",
     },
+    -- Ironbark (Restoration — external)
+    {
+        id       = 102342,
+        cd       = 90,
+        duration = 12,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = { [105] = true },
+        category = "cooldown",
+    },
     -- Tranquility (Restoration)
     {
         id       = 740,
@@ -389,7 +399,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [105] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Incarnation: Tree of Life (Restoration)
     {
@@ -399,7 +409,7 @@ local spells = {
         charges  = nil,
         class    = "DRUID",
         specs    = { [105] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Convoke the Spirits (all specs — choice node with Incarnation)
     {
@@ -411,16 +421,7 @@ local spells = {
         specs    = nil,
         category = "cooldown",
     },
-    -- Ironbark (Restoration — external)
-    {
-        id       = 102342,
-        cd       = 90,
-        duration = 12,
-        charges  = nil,
-        class    = "DRUID",
-        specs    = { [105] = true },
-        category = "cooldown",
-    },
+
 
     ---------------------------------------------------------------------------
     -- MONK
@@ -474,7 +475,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Restoral (Mistweaver — choice node with Revival)
     {
@@ -484,7 +485,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Invoke Yu'lon, the Jade Serpent (Mistweaver)
     {
@@ -494,7 +495,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Invoke Chi-Ji, the Red Crane (Mistweaver — choice node with Yu'lon)
     {
@@ -504,7 +505,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Life Cocoon (Mistweaver — external)
     {
@@ -514,7 +515,7 @@ local spells = {
         charges  = nil,
         class    = "MONK",
         specs    = { [270] = true },
-        category = "cooldown",
+        category = "healer",
     },
 
     ---------------------------------------------------------------------------
@@ -594,7 +595,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Apotheosis (Holy)
     {
@@ -604,7 +605,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [257] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Guardian Spirit (Holy — external)
     {
@@ -654,7 +655,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Ultimate Penitence (Discipline — choice node with PW:Barrier)
     {
@@ -664,7 +665,7 @@ local spells = {
         charges  = nil,
         class    = "PRIEST",
         specs    = { [256] = true },
-        category = "cooldown",
+        category = "healer",
     },
 
     ---------------------------------------------------------------------------
@@ -709,7 +710,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Ascendance (Restoration — choice node with Healing Tide Totem)
     {
@@ -719,7 +720,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Spirit Link Totem (Restoration)
     {
@@ -729,7 +730,7 @@ local spells = {
         charges  = nil,
         class    = "SHAMAN",
         specs    = { [264] = true },
-        category = "cooldown",
+        category = "healer",
     },
 
     ---------------------------------------------------------------------------
@@ -746,16 +747,7 @@ local spells = {
         specs    = { [1467] = true },
         category = "cooldown",
     },
-    -- Rewind (Preservation — 240s base, 120s with Temporal Artificer)
-    {
-        id       = 363534,
-        cd       = 240,
-        duration = 4,
-        charges  = nil,
-        class    = "EVOKER",
-        specs    = { [1468] = true },
-        category = "cooldown",
-    },
+
     -- Tip the Scales
     {
         id       = 370553,
@@ -776,6 +768,16 @@ local spells = {
         specs    = { [1473] = true },
         category = "cooldown",
     },
+    -- Rewind (Preservation — 240s base, 120s with Temporal Artificer)
+    {
+        id       = 363534,
+        cd       = 240,
+        duration = 4,
+        charges  = nil,
+        class    = "EVOKER",
+        specs    = { [1468] = true },
+        category = "cooldown",
+    },
     -- Dream Flight (Preservation — choice node with Stasis)
     {
         id       = 359816,
@@ -784,7 +786,7 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1468] = true },
-        category = "cooldown",
+        category = "healer",
     },
     -- Stasis (Preservation — choice node with Dream Flight)
     {
@@ -794,7 +796,151 @@ local spells = {
         charges  = nil,
         class    = "EVOKER",
         specs    = { [1468] = true },
-        category = "cooldown",
+        category = "healer",
+    },
+    ---------------------------------------------------------------------------
+    -- MOBILITY
+    ---------------------------------------------------------------------------
+
+    -- Heroic Leap (Warrior)
+    {
+        id       = 6544,
+        cd       = 20,
+        duration = nil,
+        charges  = nil,
+        class    = "WARRIOR",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Sprint (Rogue)
+    {
+        id       = 2983,
+        cd       = 60,
+        duration = 8,
+        charges  = nil,
+        class    = "ROGUE",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Blink (Mage — Frost/Fire)
+    {
+        id       = 1953,
+        cd       = 15,
+        duration = nil,
+        charges  = nil,
+        class    = "MAGE",
+        specs    = { [63] = true, [64] = true },
+        category = "mobility",
+    },
+    -- Shimmer (Mage — Arcane)
+    {
+        id       = 212653,
+        cd       = 15,
+        duration = nil,
+        charges  = 2,
+        class    = "MAGE",
+        specs    = { [62] = true },
+        category = "mobility",
+    },
+    -- Disengage (Hunter)
+    {
+        id       = 781,
+        cd       = 20,
+        duration = nil,
+        charges  = nil,
+        class    = "HUNTER",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Wild Charge (Druid)
+    {
+        id       = 102401,
+        cd       = 15,
+        duration = nil,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Stampeding Roar (Druid — all specs)
+    {
+        id       = 106898,
+        cd       = 120,
+        duration = 8,
+        charges  = nil,
+        class    = "DRUID",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Divine Steed (Paladin)
+    {
+        id       = 190784,
+        cd       = 45,
+        duration = 3,
+        charges  = 2,
+        class    = "PALADIN",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Fel Rush (Demon Hunter — Havoc)
+    {
+        id       = 195072,
+        cd       = 9,
+        duration = nil,
+        charges  = 2,
+        class    = "DEMONHUNTER",
+        specs    = { [577] = true },
+        category = "mobility",
+    },
+    -- Vengeful Retreat (Demon Hunter — Havoc)
+    {
+        id       = 198793,
+        cd       = 25,
+        duration = nil,
+        charges  = nil,
+        class    = "DEMONHUNTER",
+        specs    = { [577] = true },
+        category = "mobility",
+    },
+    -- Roll (Monk)
+    {
+        id       = 109132,
+        cd       = 10,
+        duration = nil,
+        charges  = 2,
+        class    = "MONK",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Death's Advance (Death Knight)
+    {
+        id       = 48265,
+        cd       = 45,
+        duration = 8,
+        charges  = nil,
+        class    = "DEATHKNIGHT",
+        specs    = nil,
+        category = "mobility",
+    },
+    -- Gust of Wind (Shaman — Elemental / Enhancement)
+    {
+        id       = 192063,
+        cd       = 30,
+        duration = nil,
+        charges  = nil,
+        class    = "SHAMAN",
+        specs    = { [262] = true, [263] = true },
+        category = "mobility",
+    },
+    -- Hover (Evoker)
+    {
+        id       = 358267,
+        cd       = 35,
+        duration = 6,
+        charges  = 2,
+        class    = "EVOKER",
+        specs    = nil,
+        category = "mobility",
     },
 };
 

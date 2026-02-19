@@ -93,6 +93,7 @@ local _frameTabs = {};
 -- Per-frame expanded state: frameIndex -> bool
 local _frameExpanded = {};
 local _selectedFrameIndex = 1;
+local _toolsSubTab = "battleRez";
 
 local function GetContentWidth(parent)
     if (not parent or not parent.GetWidth) then return FRAME_WIDTH; end
@@ -357,6 +358,7 @@ local _contentChildren = {};
 local _profileDraftName = "Profile 1";
 local _mainTab = "frames";
 local _selectedProfileName = nil;
+local _spellFilter = nil;
 
 local function DeepCopyTable(src)
     if (type(src) ~= "table") then return src; end
@@ -504,11 +506,11 @@ local function BuildFrameSpells(content, frameIndex, yOff)
 
     local selectedSpells = frameConfig.spells;
 
-    -- Organize spells by class then by category (interrupts excluded)
+    -- Organize spells by class then by category (filter applied, interrupts excluded)
     local spellsByClass = {};
     for id, spell in pairs(ST.spellDB) do
-        if (spell.category ~= "interrupt") then
-            local cls = spell.class;
+        if (spell.category ~= "interrupt") and (not _spellFilter or spell.category == _spellFilter) then
+            local cls = spell.class or "Custom";
             if (not spellsByClass[cls]) then spellsByClass[cls] = {}; end
             table.insert(spellsByClass[cls], {
                 id       = id,
@@ -519,7 +521,7 @@ local function BuildFrameSpells(content, frameIndex, yOff)
     end
 
     -- Sort spells within each class by category then name
-    local CATEGORY_ORDER = { interrupt = 1, defensive = 2, cooldown = 3 };
+    local CATEGORY_ORDER = { interrupt = 1, defensive = 2, cooldown = 3, healer = 4, mobility = 5 };
     for _, spells in pairs(spellsByClass) do
         table.sort(spells, function(a, b)
             local ao = CATEGORY_ORDER[a.category] or 99;
@@ -529,45 +531,206 @@ local function BuildFrameSpells(content, frameIndex, yOff)
         end);
     end
 
-    -- Select All / Deselect All buttons
-    Track(CreateActionButton(content, PADDING + 4, yOff, "Select All", 100, function()
+    -- Helper: color for filter button (active vs idle)
+    local COLOR_FILTER_ACTIVE = { 0.10, 0.30, 0.50, 1.0 };
+    local function FilterBtnColor(cat) return (_spellFilter == cat) and COLOR_FILTER_ACTIVE or COLOR_BTN; end
+    local function SetFilter(cat)
+        _spellFilter = (_spellFilter == cat) and nil or cat;
+        if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
+    end
+
+    -- Select All / Deselect All
+    Track(CreateActionButton(content, PADDING + 4, yOff, "Select All", 90, function()
         for id, spell in pairs(ST.spellDB) do
-            if (spell.category ~= "interrupt") then
+            if (not _spellFilter or spell.category == _spellFilter) and spell.category ~= "interrupt" then
                 selectedSpells[id] = true;
             end
         end
         ST:RefreshDisplay();
         if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
     end));
-    Track(CreateActionButton(content, PADDING + 110, yOff, "Deselect All", 100, function()
-        wipe(selectedSpells);
-        ST:RefreshDisplay();
-        if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
-    end));
-    Track(CreateActionButton(content, PADDING + 216, yOff, "All Def", 100, function()
-        for id, spell in pairs(ST.spellDB) do
-            if (spell.category == "defensive") then
-                selectedSpells[id] = true;
+    Track(CreateActionButton(content, PADDING + 100, yOff, "Deselect All", 90, function()
+        for id in pairs(selectedSpells) do
+            if not _spellFilter or (ST.spellDB[id] and ST.spellDB[id].category == _spellFilter) then
+                selectedSpells[id] = nil;
             end
         end
         ST:RefreshDisplay();
         if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
     end));
-    Track(CreateActionButton(content, PADDING + 322, yOff, "All Cooldown", 120, function()
-        for id, spell in pairs(ST.spellDB) do
-            if (spell.category == "cooldown") then
-                selectedSpells[id] = true;
-            end
-        end
-        ST:RefreshDisplay();
-        if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
-    end));
+
+    -- Filter buttons (click to filter, click again to reset)
+    Track(CreateActionButton(content, PADDING + 200, yOff, "All",       46, function() SetFilter(nil);         end, (_spellFilter == nil) and COLOR_FILTER_ACTIVE or COLOR_BTN));
+    Track(CreateActionButton(content, PADDING + 250, yOff, "Defensive", 80, function() SetFilter("defensive");  end, FilterBtnColor("defensive")));
+    Track(CreateActionButton(content, PADDING + 334, yOff, "Cooldown",  76, function() SetFilter("cooldown");   end, FilterBtnColor("cooldown")));
+    Track(CreateActionButton(content, PADDING + 414, yOff, "Healer",    70, function() SetFilter("healer");     end, FilterBtnColor("healer")));
+    Track(CreateActionButton(content, PADDING + 488, yOff, "Mobility",  76, function() SetFilter("mobility");   end, FilterBtnColor("mobility")));
     yOff = yOff - ROW_HEIGHT - 12;
 
+    -- Add custom spell by ID
+    do
+        local CLASS_OPTIONS  = { "WARRIOR","PALADIN","DEATHKNIGHT","DEMONHUNTER","DRUID","EVOKER","HUNTER","MAGE","MONK","PRIEST","ROGUE","SHAMAN","WARLOCK","CUSTOM" };
+        local CLASS_LABELS   = { WARRIOR="Warrior", PALADIN="Paladin", DEATHKNIGHT="Death Knight", DEMONHUNTER="Demon Hunter", DRUID="Druid", EVOKER="Evoker", HUNTER="Hunter", MAGE="Mage", MONK="Monk", PRIEST="Priest", ROGUE="Rogue", SHAMAN="Shaman", WARLOCK="Warlock", CUSTOM="Custom" };
+        local CAT_OPTIONS    = { "cooldown","healer","defensive","mobility","custom" };
+        local CAT_LABELS     = { cooldown="Cooldown", healer="Healer CD", defensive="Defensive", mobility="Mobility", custom="Custom" };
+
+        local addSpellClass    = "CUSTOM";
+        local addSpellCategory = "cooldown";
+        local addSpellCD       = 0;
+
+        -- Row 1 : ID + preview
+        local addLabel = content:CreateFontString(nil, "OVERLAY");
+        addLabel:SetFont(FONT, 11);
+        addLabel:SetPoint("TOPLEFT", PADDING + 4, yOff);
+        addLabel:SetTextColor(unpack(COLOR_MUTED));
+        addLabel:SetText("Add spell:");
+        Track(addLabel);
+
+        local spellInput = CreateFrame("EditBox", nil, content, "InputBoxTemplate");
+        spellInput:SetPoint("TOPLEFT", PADDING + 72, yOff + 2);
+        spellInput:SetSize(80, 18);
+        spellInput:SetAutoFocus(false);
+        spellInput:SetNumeric(true);
+        spellInput:SetMaxLetters(10);
+        Track(spellInput);
+
+        local spellPreview = content:CreateFontString(nil, "OVERLAY");
+        spellPreview:SetFont(FONT, 11);
+        spellPreview:SetPoint("TOPLEFT", PADDING + 162, yOff);
+        spellPreview:SetWidth(300);
+        spellPreview:SetTextColor(unpack(COLOR_ACCENT));
+        spellPreview:SetText("");
+        Track(spellPreview);
+
+        local function TryPreview()
+            local id = tonumber(spellInput:GetText());
+            if (not id) then spellPreview:SetText(""); return; end
+            local name = C_Spell.GetSpellName(id);
+            if (name) then
+                spellPreview:SetTextColor(unpack(COLOR_ACCENT));
+                spellPreview:SetText(name);
+            else
+                spellPreview:SetTextColor(1, 0.3, 0.3);
+                spellPreview:SetText("Unknown spell");
+            end
+        end
+        spellInput:SetScript("OnTextChanged", TryPreview);
+
+        yOff = yOff - ROW_HEIGHT - 2;
+
+        -- Row 2 : Class dropdown + Category dropdown + CD input + Add button
+        local function MakeInlineDropdown(labelText, x, width, options, labels, getVal, setVal)
+            local lbl = content:CreateFontString(nil, "OVERLAY");
+            lbl:SetFont(FONT, 10);
+            lbl:SetPoint("TOPLEFT", x, yOff);
+            lbl:SetTextColor(unpack(COLOR_MUTED));
+            lbl:SetText(labelText);
+            Track(lbl);
+
+            local btn = CreateFrame("Button", nil, content);
+            btn:SetPoint("TOPLEFT", x, yOff - 14);
+            btn:SetSize(width, ROW_HEIGHT - 2);
+            SkinButton(btn, COLOR_BTN, COLOR_BTN_HOVER);
+            Track(btn);
+
+            local btnText = btn:CreateFontString(nil, "OVERLAY");
+            btnText:SetFont(FONT, 10);
+            btnText:SetPoint("LEFT", 5, 0);
+            btnText:SetPoint("RIGHT", -14, 0);
+            btnText:SetTextColor(unpack(COLOR_LABEL));
+            btnText:SetText(labels[getVal()] or getVal());
+
+            local arrow = btn:CreateFontString(nil, "OVERLAY");
+            arrow:SetFont(FONT, 9);
+            arrow:SetPoint("RIGHT", -4, 0);
+            arrow:SetTextColor(unpack(COLOR_MUTED));
+            arrow:SetText("v");
+
+            btn:SetScript("OnClick", function()
+                MenuUtil.CreateContextMenu(btn, function(_, root)
+                    for _, opt in ipairs(options) do
+                        local txt = labels[opt] or opt;
+                        root:CreateRadio(txt,
+                            function() return getVal() == opt; end,
+                            function()
+                                setVal(opt);
+                                btnText:SetText(labels[opt] or opt);
+                            end
+                        );
+                    end
+                end);
+            end);
+            return x + width + 8;
+        end
+
+        local nextX = PADDING + 4;
+        nextX = MakeInlineDropdown("Class", nextX, 120,
+            CLASS_OPTIONS, CLASS_LABELS,
+            function() return addSpellClass; end,
+            function(v) addSpellClass = v; end);
+
+        nextX = MakeInlineDropdown("Category", nextX, 110,
+            CAT_OPTIONS, CAT_LABELS,
+            function() return addSpellCategory; end,
+            function(v) addSpellCategory = v; end);
+
+        local cdLabel = content:CreateFontString(nil, "OVERLAY");
+        cdLabel:SetFont(FONT, 10);
+        cdLabel:SetPoint("TOPLEFT", nextX, yOff);
+        cdLabel:SetTextColor(unpack(COLOR_MUTED));
+        cdLabel:SetText("CD (s)");
+        Track(cdLabel);
+
+        local cdInput = CreateFrame("EditBox", nil, content, "InputBoxTemplate");
+        cdInput:SetPoint("TOPLEFT", nextX, yOff - 14);
+        cdInput:SetSize(50, ROW_HEIGHT - 2);
+        cdInput:SetAutoFocus(false);
+        cdInput:SetNumeric(true);
+        cdInput:SetMaxLetters(5);
+        cdInput:SetText("0");
+        cdInput:SetScript("OnTextChanged", function() addSpellCD = tonumber(cdInput:GetText()) or 0; end);
+        Track(cdInput);
+        nextX = nextX + 58;
+
+        local function DoAdd()
+            local id = tonumber(spellInput:GetText());
+            if (not id) then return; end
+            local name = C_Spell.GetSpellName(id);
+            if (not name) then
+                spellPreview:SetTextColor(1, 0.3, 0.3);
+                spellPreview:SetText("Unknown spell");
+                return;
+            end
+            if (not ST.spellDB[id]) then
+                ST.spellDB[id] = {
+                    id       = id,
+                    cd       = addSpellCD,
+                    duration = nil,
+                    charges  = nil,
+                    class    = addSpellClass == "CUSTOM" and "Custom" or addSpellClass,
+                    specs    = nil,
+                    category = addSpellCategory,
+                };
+            end
+            selectedSpells[id] = true;
+            spellInput:SetText("");
+            cdInput:SetText("0");
+            spellPreview:SetText("");
+            ST:RefreshDisplay();
+            if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
+        end
+
+        spellInput:SetScript("OnEnterPressed", DoAdd);
+        Track(CreateActionButton(content, nextX, yOff - 14, "+ Add", 70, DoAdd));
+    end
+    yOff = yOff - ROW_HEIGHT * 2 - 14;
+
     local function CreateCompactSpellToggle(parent, x, y, width, spellID, text, checked, onToggle)
+        local deleteW = 14;
+
         local row = CreateFrame("Button", nil, parent);
         row:SetPoint("TOPLEFT", x, y);
-        row:SetSize(width, 19);
+        row:SetSize(width - deleteW - 2, 19);
         Track(row);
 
         local icon = row:CreateTexture(nil, "ARTWORK");
@@ -597,11 +760,29 @@ local function BuildFrameSpells(content, frameIndex, yOff)
         local label = row:CreateFontString(nil, "OVERLAY");
         label:SetFont(FONT, 11);
         label:SetPoint("LEFT", 37, 0);
+        label:SetPoint("RIGHT", 0, 0);
         label:SetTextColor(unpack(COLOR_LABEL));
-        label:SetWidth(width - 38);
         label:SetJustifyH("LEFT");
         label:SetWordWrap(false);
         label:SetText(text);
+
+        -- Red X button (same style as frame delete)
+        local delBtn = CreateFrame("Button", nil, parent);
+        delBtn:SetPoint("TOPLEFT", x + width - deleteW, y + 2);
+        delBtn:SetSize(deleteW, 15);
+        SkinButton(delBtn, { 0.4, 0.1, 0.1, 1 }, { 0.6, 0.15, 0.15, 1 });
+        Track(delBtn);
+        local delText = delBtn:CreateFontString(nil, "OVERLAY");
+        delText:SetFont(FONT, 9, "OUTLINE");
+        delText:SetPoint("CENTER", 0, 0);
+        delText:SetTextColor(1, 0.6, 0.6);
+        delText:SetText("X");
+        delBtn:SetScript("OnClick", function()
+            ST.spellDB[spellID] = nil;
+            selectedSpells[spellID] = nil;
+            ST:RefreshDisplay();
+            if (_optionsFrame and _optionsFrame:IsShown()) then BuildContent(); end
+        end);
 
         row:SetScript("OnClick", function()
             checked = not checked;
@@ -1099,9 +1280,51 @@ BuildContent = function()
         BuildContent();
     end);
 
+    local raidGroupsTabBtn = CreateFrame("Button", nil, tabBand);
+    raidGroupsTabBtn:SetSize(110, 28);
+    raidGroupsTabBtn:SetPoint("LEFT", interruptsTabBtn, "RIGHT", 2, 0);
+    SkinButton(raidGroupsTabBtn, _mainTab == "raidgroups" and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
+    local raidGroupsTabText = raidGroupsTabBtn:CreateFontString(nil, "OVERLAY");
+    raidGroupsTabText:SetFont(FONT, 12, "OUTLINE");
+    raidGroupsTabText:SetPoint("CENTER", 0, 0);
+    raidGroupsTabText:SetTextColor(unpack(_mainTab == "raidgroups" and COLOR_ACCENT or COLOR_MUTED));
+    raidGroupsTabText:SetText("Raid Groups");
+    raidGroupsTabBtn:SetScript("OnClick", function()
+        _mainTab = "raidgroups";
+        BuildContent();
+    end);
+
+    local noteTabBtn = CreateFrame("Button", nil, tabBand);
+    noteTabBtn:SetSize(90, 28);
+    noteTabBtn:SetPoint("LEFT", raidGroupsTabBtn, "RIGHT", 2, 0);
+    SkinButton(noteTabBtn, _mainTab == "note" and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
+    local noteTabText = noteTabBtn:CreateFontString(nil, "OVERLAY");
+    noteTabText:SetFont(FONT, 12, "OUTLINE");
+    noteTabText:SetPoint("CENTER", 0, 0);
+    noteTabText:SetTextColor(unpack(_mainTab == "note" and COLOR_ACCENT or COLOR_MUTED));
+    noteTabText:SetText("Note");
+    noteTabBtn:SetScript("OnClick", function()
+        _mainTab = "note";
+        BuildContent();
+    end);
+
+    local toolsTabBtn = CreateFrame("Button", nil, tabBand);
+    toolsTabBtn:SetSize(100, 28);
+    toolsTabBtn:SetPoint("LEFT", noteTabBtn, "RIGHT", 2, 0);
+    SkinButton(toolsTabBtn, _mainTab == "tools" and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
+    local toolsTabText = toolsTabBtn:CreateFontString(nil, "OVERLAY");
+    toolsTabText:SetFont(FONT, 12, "OUTLINE");
+    toolsTabText:SetPoint("CENTER", 0, 0);
+    toolsTabText:SetTextColor(unpack(_mainTab == "tools" and COLOR_ACCENT or COLOR_MUTED));
+    toolsTabText:SetText("Tools");
+    toolsTabBtn:SetScript("OnClick", function()
+        _mainTab = "tools";
+        BuildContent();
+    end);
+
     local profilesTabBtn = CreateFrame("Button", nil, tabBand);
     profilesTabBtn:SetSize(100, 28);
-    profilesTabBtn:SetPoint("LEFT", interruptsTabBtn, "RIGHT", 2, 0);
+    profilesTabBtn:SetPoint("LEFT", toolsTabBtn, "RIGHT", 2, 0);
     SkinButton(profilesTabBtn, _mainTab == "profiles" and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
     local profilesTabText = profilesTabBtn:CreateFontString(nil, "OVERLAY");
     profilesTabText:SetFont(FONT, 12, "OUTLINE");
@@ -1124,6 +1347,134 @@ BuildContent = function()
         if (_optionsFrame.scrollFrame) then
             local maxScroll = math.max(0, contentHeight - _optionsFrame.scrollFrame:GetHeight());
             _optionsFrame.scrollFrame:SetVerticalScroll(math.min(scrollPos, maxScroll));
+        end
+        return;
+    end
+
+    -- If on Raid Groups tab
+    if (_mainTab == "raidgroups") then
+        local rgY = yOff;
+        if ST.BuildRaidGroupsSection then
+            rgY = ST:BuildRaidGroupsSection(content, rgY,
+                FONT, PADDING, ROW_HEIGHT,
+                COLOR_MUTED, COLOR_LABEL, COLOR_ACCENT, COLOR_BTN, COLOR_BTN_HOVER,
+                SkinButton, CreateCheckbox, CreateActionButton, Track);
+        end
+        local contentHeight = math.max(64, math.abs(rgY) + PADDING);
+        content:SetHeight(contentHeight);
+        _optionsFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT);
+        if (_optionsFrame.scrollFrame) then
+            local maxScroll = math.max(0, contentHeight - _optionsFrame.scrollFrame:GetHeight());
+            _optionsFrame.scrollFrame:SetVerticalScroll(math.min(scrollPos, maxScroll));
+        end
+        return;
+    end
+
+    -- If on Note tab
+    if (_mainTab == "note") then
+        local noteY = yOff;
+        if (ST.BuildNoteSection) then
+            noteY = ST:BuildNoteSection(content, noteY,
+                FONT, PADDING, ROW_HEIGHT,
+                COLOR_MUTED, COLOR_LABEL, COLOR_ACCENT, COLOR_BTN, COLOR_BTN_HOVER,
+                SkinPanel, SkinButton, CreateActionButton, Track);
+        end
+        local contentHeight = math.max(64, math.abs(noteY) + PADDING);
+        content:SetHeight(contentHeight);
+        _optionsFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT);
+        if (_optionsFrame.scrollFrame) then
+            local maxScroll = math.max(0, contentHeight - _optionsFrame.scrollFrame:GetHeight());
+            _optionsFrame.scrollFrame:SetVerticalScroll(math.min(scrollPos, maxScroll));
+        end
+        return;
+    end
+
+    -- If on Tools tab
+    if (_mainTab == "tools") then
+        local toolsY = yOff;
+        _toolsSubTab = _toolsSubTab or "battleRez";
+
+        local tabsHolder = CreateFrame("Frame", nil, content);
+        tabsHolder:SetPoint("TOPLEFT", PADDING, toolsY);
+        tabsHolder:SetPoint("TOPRIGHT", -PADDING, toolsY);
+        tabsHolder:SetHeight(28);
+        Track(tabsHolder);
+
+        local function CreateToolsSubTab(parent, x, id, label)
+            local w = 180;
+            local btn = CreateFrame("Button", nil, parent);
+            btn:SetSize(w, 24);
+            btn:SetPoint("TOPLEFT", x, -2);
+            SkinButton(btn, _toolsSubTab == id and COLOR_TAB_ACTIVE or COLOR_TAB_IDLE, COLOR_BTN_HOVER);
+
+            local txt = btn:CreateFontString(nil, "OVERLAY");
+            txt:SetFont(FONT, 11, "OUTLINE");
+            txt:SetPoint("CENTER", 0, 0);
+            txt:SetText(label);
+            txt:SetTextColor(unpack(_toolsSubTab == id and COLOR_ACCENT or COLOR_MUTED));
+
+            btn:SetScript("OnClick", function()
+                _toolsSubTab = id;
+                BuildContent();
+            end);
+
+            Track(btn);
+            return x + w;
+        end
+
+        local x = 0;
+        x = CreateToolsSubTab(tabsHolder, x, "battleRez", "Battle Resurrection");
+
+        local sep1 = tabsHolder:CreateFontString(nil, "OVERLAY");
+        sep1:SetFont(FONT, 12, "OUTLINE");
+        sep1:SetPoint("TOPLEFT", x + 8, -5);
+        sep1:SetText("|");
+        sep1:SetTextColor(unpack(COLOR_MUTED));
+        Track(sep1);
+        x = x + 20;
+
+        x = CreateToolsSubTab(tabsHolder, x, "marksBar", "Marks Bar");
+
+        local sep2 = tabsHolder:CreateFontString(nil, "OVERLAY");
+        sep2:SetFont(FONT, 12, "OUTLINE");
+        sep2:SetPoint("TOPLEFT", x + 8, -5);
+        sep2:SetText("|");
+        sep2:SetTextColor(unpack(COLOR_MUTED));
+        Track(sep2);
+        x = x + 20;
+
+        x = CreateToolsSubTab(tabsHolder, x, "combatTimer", "Combat Timer");
+
+        toolsY = toolsY - 34;
+
+        if (_toolsSubTab == "battleRez") then
+            if ST.BuildBattleRezSection then
+                toolsY = ST:BuildBattleRezSection(content, toolsY,
+                    FONT, PADDING, ROW_HEIGHT,
+                    COLOR_MUTED, COLOR_LABEL, COLOR_ACCENT, COLOR_BTN, COLOR_BTN_HOVER,
+                    SkinButton, CreateCheckbox, CreateActionButton, Track);
+            end
+        elseif (_toolsSubTab == "marksBar") then
+            if ST.BuildMarksBarSection then
+                toolsY = ST:BuildMarksBarSection(content, toolsY,
+                    FONT, PADDING, ROW_HEIGHT,
+                    COLOR_MUTED, COLOR_LABEL, COLOR_ACCENT, COLOR_BTN, COLOR_BTN_HOVER,
+                    SkinButton, CreateCheckbox, CreateActionButton, Track);
+            end
+        elseif (_toolsSubTab == "combatTimer") then
+            if ST.BuildCombatTimerSection then
+                toolsY = ST:BuildCombatTimerSection(content, toolsY,
+                    FONT, PADDING, ROW_HEIGHT,
+                    COLOR_MUTED, COLOR_LABEL, COLOR_ACCENT, COLOR_BTN, COLOR_BTN_HOVER,
+                    SkinButton, CreateCheckbox, CreateActionButton, Track);
+            end
+        end
+
+        local contentHeight = math.max(64, math.abs(toolsY) + PADDING);
+        content:SetHeight(contentHeight);
+        _optionsFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT);
+        if (_optionsFrame.scrollFrame) then
+            _optionsFrame.scrollFrame:SetVerticalScroll(0);
         end
         return;
     end
@@ -1409,8 +1760,8 @@ BuildContent = function()
     main:SetHeight(mainHeight);
     sidebar:SetHeight(sideHeight);
 
-    -- Resize content
-    local contentHeight = math.max(mainHeight, sideHeight);
+    -- Resize content (add yOff offset since main/sidebar don't start at y=0)
+    local contentHeight = math.max(mainHeight, sideHeight) + math.abs(yOff);
     content:SetHeight(contentHeight);
     _optionsFrame:SetSize(FRAME_WIDTH, FRAME_HEIGHT);
 
@@ -1459,7 +1810,7 @@ local function CreateOptionsFrame()
     local titleLogo = titleBar:CreateTexture(nil, "ARTWORK");
     titleLogo:SetSize(22, 22);
     titleLogo:SetPoint("LEFT", 8, 0);
-    titleLogo:SetTexture("Interface\\AddOns\\ReversionRaidTools\\logo");
+    titleLogo:SetTexture("Interface\\Icons\\ability_evoker_reversion2");
 
     local titleText = titleBar:CreateFontString(nil, "OVERLAY");
     titleText:SetFont(FONT, 14, "OUTLINE");
@@ -1518,7 +1869,7 @@ local function CreateOptionsFrame()
         local db = ST.db;
         if not db then return; end
         local current = math.floor((db.uiScale or 1.0) * 10 + 0.5);
-        current = math.max(7, math.min(15, current + delta));
+        current = math.max(7, math.min(20, current + delta));
         db.uiScale = current / 10;
         frame:SetScale(db.uiScale);
         scaleLabel:SetText(math.floor(db.uiScale * 100) .. "%");
@@ -2039,10 +2390,10 @@ function ST:ToggleOptions()
 end
 
 -------------------------------------------------------------------------------
--- Slash Command: /arc
+-- Slash Command: /rrt
 -------------------------------------------------------------------------------
 
-SLASH_REVERSIONRAIDTOOLS1 = "/arc";
+SLASH_REVERSIONRAIDTOOLS1 = "/rrt";
 SlashCmdList["REVERSIONRAIDTOOLS"] = function(msg)
     msg = strtrim(msg or ""):lower();
 
@@ -2097,3 +2448,5 @@ SlashCmdList["REVERSIONRAIDTOOLS"] = function(msg)
         ST:ToggleOptions();
     end
 end;
+
+

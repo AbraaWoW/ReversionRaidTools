@@ -4,7 +4,7 @@
 ## Author: Abraa
 ## Version: 1.0.0
 ## SavedVariables: ReversionRaidToolsDB
-## IconTexture: Interface\AddOns\ReversionRaidTools\logo
+## IconTexture: Interface\Icons\ability_evoker_reversion2
 ## OptionalDeps: LibSharedMedia-3.0
 ## DefaultState: enabled
 
@@ -19,5 +19,12 @@ Engine.lua
 Display.lua
 Display\Bar.lua
 Display\Icon.lua
+Note.lua
 Options.lua
 Profiles.lua
+Tools\BattleRez.lua
+Tools\RaidCheck.lua
+Tools\MarksBar.lua
+Tools\CombatTimer.lua
+RaidGroups.lua
+

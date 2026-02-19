@@ -17,7 +17,7 @@ Create multiple independent frames to monitor defensives, offensives and interru
    World of Warcraft/_retail_/Interface/AddOns/
    ```
 3. Restart WoW or type `/reload`
-4. Type `/arc` to open the options panel
+4. Type `/rrt` to open the options panel
 
 > The addon will display a warning on login if the game client version is newer than the supported interface version.
 
@@ -27,7 +27,7 @@ Create multiple independent frames to monitor defensives, offensives and interru
 
 ### Quick Setup
 
-1. `/arc` to open the options panel
+1. `/rrt` to open the options panel
 2. Click **+ New Frame** in the sidebar to create your first frame
 3. Go to the **Spells** tab and select the spells you want to track
 4. Use **Preview** to see how it looks with simulated players
@@ -38,7 +38,7 @@ Create multiple independent frames to monitor defensives, offensives and interru
 
 | Command | Description |
 |---|---|
-| `/arc` | Toggle the options panel |
+| `/rrt` | Toggle the options panel |
 
 ---
 

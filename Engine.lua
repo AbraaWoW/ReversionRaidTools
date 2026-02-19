@@ -585,6 +585,8 @@ local function ScanTalentModifiers(player)
     end
 end
 
+local ProcessNextInspect;
+
 local function ApplyInspectResults(unit)
     local name = UnitName(unit);
     if (not name) then return; end
@@ -620,7 +622,7 @@ local function ApplyInspectResults(unit)
     end
 end
 
-local function ProcessNextInspect()
+ProcessNextInspect = function()
     if (_inspectInProgress) then return; end
     while (#_inspectPending > 0) do
         local unit = table.remove(_inspectPending, 1);
@@ -1036,3 +1038,5 @@ function ST:DisableEngine()
         ST:HideAllDisplays();
     end
 end
+
+

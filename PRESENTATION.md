@@ -18,7 +18,7 @@ Fully customizable raid cooldown tracking addon. Create multiple independent fra
 
 | Command | Description |
 |---|---|
-| `/arc` | Toggle the options panel |
+| `/rrt` | Toggle the options panel |
 
 ---
 

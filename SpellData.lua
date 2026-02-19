@@ -37,6 +37,10 @@ function ST:GetSpellsForClass(class, spec)
     return result;
 end
 
+function ST:RegisterCategory(name, config)
+    -- no-op: category metadata defined but not used at runtime
+end
+
 function ST:GetSpellsByCategory(category)
     local result = {};
     for id, spell in pairs(self.spellDB) do
