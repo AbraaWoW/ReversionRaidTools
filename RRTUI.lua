@@ -49,6 +49,48 @@ local BuildBuffRemindersUI = RRT.UI.Options.BuffReminders.BuildUI
 local BuildRaidInspectUI = RRT.UI.Options.RaidInspect and RRT.UI.Options.RaidInspect.BuildUI
 local BuildProfilesUI = RRT.UI.Options.Profiles and RRT.UI.Options.Profiles.BuildUI
 
+local _settingsCategoryRegistered = false
+
+local function RegisterBlizzardAddonCategory()
+    if _settingsCategoryRegistered then return end
+    _settingsCategoryRegistered = true
+
+    local settingsPanel = CreateFrame("Frame", "ReversionRaidToolsSettingsPanel", UIParent)
+    settingsPanel.name = "Reversion Raid Tools"
+
+    local title = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 16, -16)
+    title:SetText("|cFF00FFFFReversion Raid Tools|r")
+
+    local desc = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
+    desc:SetText("Open the addon main options window.")
+
+    local openBtn = CreateFrame("Button", nil, settingsPanel, "UIPanelButtonTemplate")
+    openBtn:SetSize(220, 24)
+    openBtn:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -16)
+    openBtn:SetText("Open Reversion Raid Tools")
+    openBtn:SetScript("OnClick", function()
+        if RRT and RRT.RRTUI then
+            RRT.RRTUI:Show()
+        end
+        if SettingsPanel then
+            HideUIPanel(SettingsPanel)
+        end
+    end)
+
+    local slashInfo = settingsPanel:CreateFontString(nil, "ARTWORK", "GameFontDisable")
+    slashInfo:SetPoint("TOPLEFT", openBtn, "BOTTOMLEFT", 0, -12)
+    slashInfo:SetText("You can also use |cFFFFFF00/rrt|r")
+
+    if Settings and Settings.RegisterCanvasLayoutCategory and Settings.RegisterAddOnCategory then
+        local category = Settings.RegisterCanvasLayoutCategory(settingsPanel, settingsPanel.name)
+        Settings.RegisterAddOnCategory(category)
+    elseif InterfaceOptions_AddCategory then
+        InterfaceOptions_AddCategory(settingsPanel)
+    end
+end
+
 function RRTUI:Init()
     -- Create the scale bar
     local scaleMin, scaleMax = 0.6, 2.0
@@ -199,6 +241,7 @@ function RRTUI:Init()
     local versionTitle = "|cFFC9A227Reversion Raid Tools|r"
     local statusBarText = versionTitle .. "|cFFFFFFFF" .. versionNumber .. " | " .. (authorsString) .. "|r"
     RRTUI.StatusBar.authorName:SetText(statusBarText)
+    RegisterBlizzardAddonCategory()
 
     if (RRT.ApplyGlobalFontToAddonUI) then
         RRT:ApplyGlobalFontToAddonUI(false, true)
