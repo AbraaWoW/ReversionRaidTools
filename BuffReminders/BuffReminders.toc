@@ -1,0 +1,28 @@
+## Interface: 120001, 120000
+## Title: BuffReminders
+## Notes: Track missing buffs at a glance
+## Author: zerbi
+## Version: v3.7.6
+## SavedVariables: BuffRemindersDB
+## X-Curse-Project-ID: 1441094
+## X-Wago-ID: qGYZZjNg
+## OptionalDeps: Masque, LibCustomGlow-1.0
+## IconTexture: Interface\AddOns\BuffReminders\icon.tga
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+Libs\LibSharedMedia-3.0\lib.xml
+Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.lua
+
+Core.lua
+Data\Buffs.lua
+Data\ConsumableItems.lua
+Data\Pets.lua
+State.lua
+UI\Components.lua
+UI\Glow.lua
+Display\BuffReminders.lua
+Display\ImportExport.lua
+Display\Movers.lua
+Display\SecureButtons.lua
+Options\Options.lua
