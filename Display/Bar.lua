@@ -37,8 +37,9 @@ function ST._BuildBarFrame(frameIndex)
     local spacing = math.max(0, frameConfig.iconSpacing or 2);
     local iconSize = bh;
     local barW = math.max(60, frameConfig.barWidth - iconSize);
-    local nameFontSize = math.max(9, math.floor(bh * 0.45));
-    local cdFontSize = math.max(10, math.floor(bh * 0.55));
+    local baseFontSize = ST._ResolveFrameFontSize(frameConfig, math.max(10, math.floor(bh * 0.5)), 8, 40);
+    local nameFontSize = math.max(8, baseFontSize - 1);
+    local cdFontSize = baseFontSize;
     local fontPath = ST._GetFontPath(frameConfig.font);
     local outline = frameConfig.fontOutline or "OUTLINE";
 
@@ -203,8 +204,9 @@ function ST:RefreshBarLayout(frameIndex)
     local spacing = math.max(0, frameConfig.iconSpacing or 2);
     local iconSize = bh;
     local barW = math.max(60, frameConfig.barWidth - iconSize);
-    local nameFontSize = math.max(9, math.floor(bh * 0.45));
-    local cdFontSize = math.max(10, math.floor(bh * 0.55));
+    local baseFontSize = ST._ResolveFrameFontSize(frameConfig, math.max(10, math.floor(bh * 0.5)), 8, 40);
+    local nameFontSize = math.max(8, baseFontSize - 1);
+    local cdFontSize = baseFontSize;
 
     display.frame:SetWidth(frameConfig.barWidth);
     display.frame:SetAlpha(frameConfig.barAlpha);
@@ -213,7 +215,7 @@ function ST:RefreshBarLayout(frameIndex)
     if (display.title) then
         local label = frameConfig.isInterruptFrame and "Interrupts" or (frameConfig.name or ("Frame " .. frameIndex));
         if (display.title.text) then
-            display.title.text:SetFont(fontPath, 12, outline);
+            display.title.text:SetFont(fontPath, ST._ResolveFrameFontSize(frameConfig, 12, 8, 40), outline);
         end
         if (frameConfig.locked) then
             display.title:Hide();

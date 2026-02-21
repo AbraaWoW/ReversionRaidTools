@@ -30,6 +30,27 @@ local COLOR_LABEL  = { 0.85, 0.85, 0.85 }
 local COLOR_MUTED  = { 0.55, 0.55, 0.55 }
 local COLOR_BTN      = { 0.18, 0.18, 0.18, 1.0 }
 local COLOR_BTN_HOVER= { 0.25, 0.25, 0.25, 1.0 }
+local COLOR_PANEL_BG = { 0.08, 0.08, 0.08, 0.95 }
+local COLOR_PANEL_EDGE = { 0.20, 0.20, 0.20, 0.90 }
+local COLOR_RRT_GOLD = { 0.788, 0.635, 0.153 }
+local COLOR_RRT_WHITE = { 1.0, 1.0, 1.0 }
+local COLOR_RRT_MUTED = { 0.78, 0.78, 0.78 }
+
+local function GetRRTFont()
+    local fontName = RRTDB and RRTDB.Settings and RRTDB.Settings.GlobalFont
+    if fontName and RRT.LSM and RRT.LSM.Fetch then
+        local fetched = RRT.LSM:Fetch("font", fontName)
+        if fetched then
+            return fetched
+        end
+    end
+    return FONT
+end
+
+local function ApplyRRTFont(fs, size, flags)
+    if not fs then return end
+    fs:SetFont(GetRRTFont(), size or 10, flags or "OUTLINE")
+end
 
 local function GetDB()
     return RRTDB and RRTDB.MarksBar
@@ -133,7 +154,9 @@ local function ApplyLock()
     local cfg = GetDB()
     if not cfg then return end
     _frame:SetMovable(not cfg.locked)
-    _frame:EnableMouse(not cfg.locked)
+    -- Keep mouse enabled so secure child buttons (marks/markers) remain clickable
+    -- even when the bar is locked. Dragging is still blocked via SetMovable(false).
+    _frame:EnableMouse(true)
 end
 
 local function ApplyScale()
@@ -162,16 +185,86 @@ end
 -- Frame
 -------------------------------------------------------------------------------
 
-local function MakeBorder(parent)
-    local b = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    b:SetBackdrop({
-        bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
+local function MakeBorder(parent, accent)
+    local wrap = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    wrap:SetBackdrop({
+        bgFile   = "Interface\\BUTTONS\\WHITE8X8",
         edgeFile = "Interface\\BUTTONS\\WHITE8X8",
         edgeSize = 1,
     })
-    b:SetBackdropColor(0.05, 0.05, 0.05, 0.8)
-    b:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
-    return b
+    wrap:SetBackdropColor(0.08, 0.10, 0.13, 0.90)
+
+    local r, g, b = 0.30, 0.36, 0.44
+    if accent then
+        r, g, b = accent[1], accent[2], accent[3]
+    end
+    wrap:SetBackdropBorderColor(r * 0.55, g * 0.55, b * 0.55, 0.95)
+
+    wrap.hover = wrap:CreateTexture(nil, "HIGHLIGHT")
+    wrap.hover:SetAllPoints()
+    wrap.hover:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    wrap.hover:SetVertexColor(r, g, b, 0.14)
+    wrap.hover:Hide()
+
+    wrap.accent = accent
+    return wrap
+end
+
+local function SetWrapHover(wrap, isHover)
+    if not wrap or not wrap.SetBackdropBorderColor then return end
+    local accent = wrap.accent or { 0.30, 0.36, 0.44 }
+    local mul = isHover and 0.95 or 0.55
+    local alpha = isHover and 1 or 0.95
+    wrap:SetBackdropBorderColor(accent[1] * mul, accent[2] * mul, accent[3] * mul, alpha)
+    if wrap.hover then
+        if isHover then wrap.hover:Show() else wrap.hover:Hide() end
+    end
+end
+
+local function HookWrapHover(button, wrap)
+    if not button or not wrap then return end
+    button:HookScript("OnEnter", function() SetWrapHover(wrap, true) end)
+    button:HookScript("OnLeave", function() SetWrapHover(wrap, false) end)
+end
+
+local function ApplyTabButtonChrome(wrap, button, accent)
+    if not wrap or not button then return end
+    accent = accent or { 0.95, 0.82, 0.28 }
+
+    wrap:SetBackdropColor(0.10, 0.10, 0.10, 0.96)
+    wrap:SetBackdropBorderColor(0.22, 0.22, 0.22, 0.95)
+
+    local bg = wrap:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    bg:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    bg:SetVertexColor(0.10, 0.10, 0.10, 0.96)
+
+    local hover = wrap:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetAllPoints()
+    hover:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    hover:SetVertexColor(0.20, 0.20, 0.20, 0.90)
+    hover:Hide()
+
+    local glow = wrap:CreateTexture(nil, "BACKGROUND", nil, -4)
+    glow:SetPoint("TOPLEFT", wrap, "BOTTOMLEFT", -7, 0)
+    glow:SetPoint("TOPRIGHT", wrap, "BOTTOMRIGHT", 7, 0)
+    glow:SetTexture("Interface\\BUTTONS\\UI-Panel-Button-Glow")
+    glow:SetTexCoord(0, 95 / 128, 30 / 64, 38 / 64)
+    glow:SetBlendMode("ADD")
+    glow:SetHeight(8)
+    glow:SetAlpha(0.65)
+    glow:Hide()
+
+    button:HookScript("OnEnter", function()
+        hover:Show()
+        glow:Show()
+        wrap:SetBackdropBorderColor(accent[1] * 0.85, accent[2] * 0.85, accent[3] * 0.85, 0.95)
+    end)
+    button:HookScript("OnLeave", function()
+        hover:Hide()
+        glow:Hide()
+        wrap:SetBackdropBorderColor(0.22, 0.22, 0.22, 0.95)
+    end)
 end
 
 local function UpdateLayout()
@@ -179,73 +272,111 @@ local function UpdateLayout()
     local cfg = GetDB()
     if not cfg then return end
 
-    local baseX   = 8
-    local rowY    = -6
+    local baseX    = 10
+    local iconStep = 26
+    local rowY     = -24
     local maxWidth = 120
-    local rightX  = baseX + 8 * 24 + 6
+    local rightX   = baseX + 8 * iconStep + 14
+    local actionW  = 82
+    local actionGap = 8
 
-    if _frame.targetHeader then _frame.targetHeader:Hide() end
-    if _frame.worldHeader  then _frame.worldHeader:Hide()  end
+    if _frame.targetHeader then
+        if cfg.showTargetMarks then
+            _frame.targetHeader:ClearAllPoints()
+            _frame.targetHeader:SetPoint("TOPLEFT", baseX, -8)
+            _frame.targetHeader:SetText("TARGET MARKS")
+            _frame.targetHeader:Show()
+        else
+            _frame.targetHeader:Hide()
+        end
+    end
+    if _frame.worldHeader then
+        if cfg.showWorldMarks then
+            _frame.worldHeader:ClearAllPoints()
+            _frame.worldHeader:SetPoint("TOPLEFT", baseX, rowY - 26)
+            _frame.worldHeader:SetText("WORLD MARKERS")
+            _frame.worldHeader:Show()
+        else
+            _frame.worldHeader:Hide()
+        end
+    end
+    if _frame.toolsHeader then
+        if cfg.showRaidTools then
+            _frame.toolsHeader:ClearAllPoints()
+            _frame.toolsHeader:SetPoint("TOPLEFT", rightX, -8)
+            _frame.toolsHeader:SetText("RAID TOOLS")
+            _frame.toolsHeader:Show()
+        else
+            _frame.toolsHeader:Hide()
+        end
+    end
 
     if cfg.showTargetMarks then
         for i = 1, 8 do
             local btn = _frame.targetButtons[i]
             btn:Show(); btn:ClearAllPoints()
-            btn:SetPoint("TOPLEFT", baseX + (i - 1) * 24, rowY)
+            btn:SetPoint("TOPLEFT", baseX + (i - 1) * iconStep, rowY)
         end
     else
         for i = 1, 8 do _frame.targetButtons[i]:Hide() end
     end
 
     if cfg.showRaidTools then
-        local w = _frame.raidTools[1]
-        w:Show(); w:SetSize(64, 22); w:ClearAllPoints()
-        w:SetPoint("TOPLEFT", rightX, rowY)
-        w.text:SetText("Ready")
-        maxWidth = math.max(maxWidth, rightX + 64 + 8)
+        local ready = _frame.raidTools[1]
+        local roles = _frame.raidTools[2]
+        ready:Show(); ready:SetSize(actionW, 24); ready:ClearAllPoints()
+        ready:SetPoint("TOPLEFT", rightX, rowY)
+        ready.text:SetText("Ready")
+        roles:Show(); roles:SetSize(actionW, 24); roles:ClearAllPoints()
+        roles:SetPoint("TOPLEFT", rightX + actionW + actionGap, rowY)
+        roles.text:SetText("Roles")
+        maxWidth = math.max(maxWidth, rightX + (actionW * 2) + actionGap + 10)
     else
         _frame.raidTools[1]:Hide()
+        _frame.raidTools[2]:Hide()
     end
 
-    maxWidth = math.max(maxWidth, baseX + (8 * 24) + 8)
-    rowY = rowY - 24
+    maxWidth = math.max(maxWidth, baseX + (8 * iconStep) + 8)
+    rowY = rowY - 36
 
     if cfg.showWorldMarks then
         for i = 1, 8 do
             local btn = _frame.worldButtons[i]
             btn:Show(); btn:ClearAllPoints()
-            btn:SetPoint("TOPLEFT", baseX + (i - 1) * 24, rowY - 1)
+            btn:SetPoint("TOPLEFT", baseX + (i - 1) * iconStep, rowY)
         end
     else
         for i = 1, 8 do _frame.worldButtons[i]:Hide() end
     end
 
-    if _frame.clearAll then
-        _frame.clearAll:Show(); _frame.clearAll:SetSize(64, 22); _frame.clearAll:ClearAllPoints()
-        _frame.clearAll:SetPoint("TOPLEFT", rightX, rowY)
-        maxWidth = math.max(maxWidth, rightX + 64 + 8)
-    end
-
-    maxWidth = math.max(maxWidth, baseX + (8 * 24) + 8)
-    rowY = rowY - 26
-
     if cfg.showRaidTools then
-        local labels = { "Roles", "Pull", "Cancel" }
-        local x = baseX
-        for i = 2, 4 do
-            local w = _frame.raidTools[i]
-            w:Show(); w:SetSize(64, 22); w:ClearAllPoints()
-            w:SetPoint("TOPLEFT", x, rowY)
-            w.text:SetText(labels[i - 1])
-            x = x + 64 + 6
+        local pull = _frame.raidTools[3]
+        local cancel = _frame.raidTools[4]
+        pull:Show(); pull:SetSize(actionW, 24); pull:ClearAllPoints()
+        pull:SetPoint("TOPLEFT", rightX, rowY)
+        pull.text:SetText("Pull")
+        cancel:Show(); cancel:SetSize(actionW, 24); cancel:ClearAllPoints()
+        cancel:SetPoint("TOPLEFT", rightX + actionW + actionGap, rowY)
+        cancel.text:SetText("Cancel")
+
+        if _frame.clearAll then
+            _frame.clearAll:Show(); _frame.clearAll:SetSize(actionW, 24); _frame.clearAll:ClearAllPoints()
+            _frame.clearAll:SetPoint("TOPLEFT", rightX + ((actionW + actionGap) * 2), rowY)
+            maxWidth = math.max(maxWidth, rightX + ((actionW + actionGap) * 3) + 10)
         end
-        maxWidth = math.max(maxWidth, x + 2)
-        rowY = rowY - 24
+        rowY = rowY - 30
     else
-        for i = 2, 4 do _frame.raidTools[i]:Hide() end
+        _frame.raidTools[3]:Hide()
+        _frame.raidTools[4]:Hide()
+        if _frame.clearAll then
+            _frame.clearAll:Show(); _frame.clearAll:SetSize(actionW, 24); _frame.clearAll:ClearAllPoints()
+            _frame.clearAll:SetPoint("TOPLEFT", rightX, rowY)
+            maxWidth = math.max(maxWidth, rightX + actionW + 10)
+        end
+        rowY = rowY - 30
     end
 
-    local height = math.max(42, math.abs(rowY) + 8)
+    local height = math.max(78, math.abs(rowY) + 8)
     _frame:SetSize(maxWidth, height)
 end
 
@@ -270,26 +401,45 @@ local function CreateMarksBarFrame()
     end)
 
     f:SetBackdrop({
-        bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
+        bgFile   = "Interface\\BUTTONS\\WHITE8X8",
         edgeFile = "Interface\\BUTTONS\\WHITE8X8",
         edgeSize = 1,
     })
-    f:SetBackdropColor(0, 0, 0, 0.7)
-    f:SetBackdropBorderColor(0.2, 0.2, 0.2, 0.9)
+    f:SetBackdropColor(unpack(COLOR_PANEL_BG))
+    f:SetBackdropBorderColor(unpack(COLOR_PANEL_EDGE))
+
+    f.bgGrad = f:CreateTexture(nil, "BACKGROUND")
+    f.bgGrad:SetAllPoints()
+    f.bgGrad:SetGradient("VERTICAL", CreateColor(0.07, 0.10, 0.16, 0.88), CreateColor(0.02, 0.03, 0.06, 0.88))
+
+    f.topLine = f:CreateTexture(nil, "ARTWORK")
+    f.topLine:SetTexture("Interface\\BUTTONS\\WHITE8X8")
+    f.topLine:SetHeight(1)
+    f.topLine:SetPoint("TOPLEFT", 8, -2)
+    f.topLine:SetPoint("TOPRIGHT", -8, -2)
+    f.topLine:SetVertexColor(0.79, 0.63, 0.15, 0.35)
 
     local targetHeader = f:CreateFontString(nil, "OVERLAY")
-    targetHeader:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    ApplyRRTFont(targetHeader, 9, "OUTLINE")
+    targetHeader:SetTextColor(COLOR_RRT_GOLD[1], COLOR_RRT_GOLD[2], COLOR_RRT_GOLD[3], 0.95)
     targetHeader:SetText("")
     f.targetHeader = targetHeader
 
     local worldHeader = f:CreateFontString(nil, "OVERLAY")
-    worldHeader:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    ApplyRRTFont(worldHeader, 9, "OUTLINE")
+    worldHeader:SetTextColor(COLOR_RRT_GOLD[1], COLOR_RRT_GOLD[2], COLOR_RRT_GOLD[3], 0.95)
     worldHeader:SetText("")
     f.worldHeader = worldHeader
 
+    local toolsHeader = f:CreateFontString(nil, "OVERLAY")
+    ApplyRRTFont(toolsHeader, 9, "OUTLINE")
+    toolsHeader:SetTextColor(COLOR_RRT_GOLD[1], COLOR_RRT_GOLD[2], COLOR_RRT_GOLD[3], 0.95)
+    toolsHeader:SetText("")
+    f.toolsHeader = toolsHeader
+
     f.targetButtons = {}
     for i = 1, 8 do
-        local wrap = MakeBorder(f)
+        local wrap = MakeBorder(f, { 0.84, 0.84, 0.90 })
         wrap:SetSize(22, 22)
         local b = CreateFrame("Button", nil, wrap, "SecureActionButtonTemplate")
         b:SetAllPoints()
@@ -302,6 +452,7 @@ local function CreateMarksBarFrame()
         t:SetPoint("BOTTOMRIGHT", -1, 1)
         t:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
         SetRaidTargetIconTexture(t, i)
+        HookWrapHover(b, wrap)
         f.targetButtons[i] = wrap
     end
 
@@ -311,7 +462,7 @@ local function CreateMarksBarFrame()
         {0.95,0.92,0.22},{0.92,0.48,0.12},{0.35,0.55,0.70},{0.92,0.92,0.92},
     }
     for i = 1, 8 do
-        local wrap = MakeBorder(f)
+        local wrap = MakeBorder(f, wColors[i])
         wrap:SetSize(22, 22)
         local b = CreateFrame("Button", nil, wrap, "SecureActionButtonTemplate")
         b:SetAllPoints()
@@ -324,11 +475,12 @@ local function CreateMarksBarFrame()
         color:SetPoint("TOPLEFT", 3, -3)
         color:SetPoint("BOTTOMRIGHT", -3, 3)
         color:SetColorTexture(unpack(wColors[i]))
+        HookWrapHover(b, wrap)
         f.worldButtons[i] = wrap
     end
 
-    local clearAllWrap = MakeBorder(f)
-    clearAllWrap:SetSize(64, 22)
+    local clearAllWrap = MakeBorder(f, { 0.95, 0.82, 0.28 })
+    clearAllWrap:SetSize(76, 24)
     local clearAll = CreateFrame("Button", nil, clearAllWrap, "SecureActionButtonTemplate")
     clearAll:SetAllPoints()
     clearAll:RegisterForClicks("AnyDown", "AnyUp")
@@ -338,23 +490,25 @@ local function CreateMarksBarFrame()
         TMSlash(), 0, CWMSlash(), CWMSlash(), CWMSlash(), CWMSlash(),
         CWMSlash(), CWMSlash(), CWMSlash(), CWMSlash()))
     local clearAllText = clearAll:CreateFontString(nil, "OVERLAY")
-    clearAllText:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+    ApplyRRTFont(clearAllText, 10, "OUTLINE")
     clearAllText:SetPoint("CENTER", 0, 0)
-    clearAllText:SetTextColor(0.85, 0.85, 0.85, 1)
+    clearAllText:SetTextColor(COLOR_RRT_WHITE[1], COLOR_RRT_WHITE[2], COLOR_RRT_WHITE[3], 1)
     clearAllText:SetText("Clear")
+    ApplyTabButtonChrome(clearAllWrap, clearAll, { 0.95, 0.82, 0.28 })
     f.clearAll = clearAllWrap
 
-    local function MakeRaidToolButton(onClick)
-        local wrap = MakeBorder(f)
-        wrap:SetSize(64, 22)
+    local function MakeRaidToolButton(onClick, accent, textColor)
+        local wrap = MakeBorder(f, accent)
+        wrap:SetSize(76, 24)
         local b = CreateFrame("Button", nil, wrap)
         b:SetAllPoints()
         b:SetScript("OnClick", onClick)
         local txt = b:CreateFontString(nil, "OVERLAY")
-        txt:SetFont("Fonts\\FRIZQT__.TTF", 10, "OUTLINE")
+        ApplyRRTFont(txt, 10, "OUTLINE")
         txt:SetPoint("CENTER", 0, 0)
-        txt:SetTextColor(0.88, 0.88, 0.88, 1)
+        txt:SetTextColor((textColor and textColor[1]) or 0.88, (textColor and textColor[2]) or 0.88, (textColor and textColor[3]) or 0.88, 1)
         wrap.text = txt
+        ApplyTabButtonChrome(wrap, b, accent)
         return wrap
     end
 
@@ -368,16 +522,16 @@ local function CreateMarksBarFrame()
         if RRT and RRT.ShowRaidCheck then
             C_Timer.After(0.05, function() RRT:ShowRaidCheck() end)
         end
-    end)
-    f.raidTools[2] = MakeRaidToolButton(function() StartRolePoll() end)
+    end, { 0.95, 0.82, 0.28 }, COLOR_RRT_WHITE)
+    f.raidTools[2] = MakeRaidToolButton(function() StartRolePoll() end, { 0.95, 0.82, 0.28 }, COLOR_RRT_WHITE)
     f.raidTools[3] = MakeRaidToolButton(function()
         local cfg = GetDB()
         StartPullCountdown((cfg and cfg.pullTimer) or 10)
-    end)
+    end, { 0.95, 0.82, 0.28 }, COLOR_RRT_WHITE)
     f.raidTools[4] = MakeRaidToolButton(function()
         CancelPullCountdown()
         SendGroupMessage("Pull canceled.")
-    end)
+    end, { 0.95, 0.82, 0.28 }, COLOR_RRT_WHITE)
 
     _frame = f
     return f
@@ -483,7 +637,7 @@ local function BuildMarksBarUI(parent)
     local title = parent:CreateFontString(nil, "OVERLAY")
     title:SetFont(FONT, 12, "OUTLINE")
     title:SetPoint("TOPLEFT", PADDING, yOff)
-    title:SetTextColor(1, 0.82, 0, 1)
+    title:SetTextColor(COLOR_RRT_GOLD[1], COLOR_RRT_GOLD[2], COLOR_RRT_GOLD[3], 1)
     title:SetText("Marks Bar")
     yOff = yOff - 24
 
@@ -514,14 +668,14 @@ local function BuildMarksBarUI(parent)
     local pullLabel = parent:CreateFontString(nil, "OVERLAY")
     pullLabel:SetFont(FONT, 11)
     pullLabel:SetPoint("TOPLEFT", PADDING, yOff - 5)
-    pullLabel:SetTextColor(unpack(COLOR_MUTED))
+    pullLabel:SetTextColor(unpack(COLOR_RRT_MUTED))
     pullLabel:SetText("Pull Timer:")
 
     local pullSecs = parent:CreateFontString(nil, "OVERLAY")
     pullSecs:SetFont(FONT, 11)
     pullSecs:SetWidth(44)
     pullSecs:SetPoint("TOPLEFT", PADDING + 90, yOff - 5)
-    pullSecs:SetTextColor(1, 1, 1)
+    pullSecs:SetTextColor(unpack(COLOR_RRT_WHITE))
     pullSecs:SetText(tostring(cfg.pullTimer or 10) .. "s")
 
     local function SetPull(delta)
@@ -542,14 +696,14 @@ local function BuildMarksBarUI(parent)
     local scaleLabel = parent:CreateFontString(nil, "OVERLAY")
     scaleLabel:SetFont(FONT, 11)
     scaleLabel:SetPoint("TOPLEFT", PADDING, yOff - 5)
-    scaleLabel:SetTextColor(unpack(COLOR_MUTED))
+    scaleLabel:SetTextColor(unpack(COLOR_RRT_MUTED))
     scaleLabel:SetText("Scale:")
 
     local scalePct = parent:CreateFontString(nil, "OVERLAY")
     scalePct:SetFont(FONT, 11)
     scalePct:SetWidth(44)
     scalePct:SetPoint("TOPLEFT", PADDING + 90, yOff - 5)
-    scalePct:SetTextColor(1, 1, 1)
+    scalePct:SetTextColor(unpack(COLOR_RRT_WHITE))
     scalePct:SetText(math.floor((cfg.scale or 1.0) * 100) .. "%")
 
     local function ApplyScaleStep(delta)

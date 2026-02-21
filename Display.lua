@@ -31,6 +31,69 @@ ST.displayFrames = {};      -- frameIndex (number) -> { frame, title, barPool/ic
 -- Shared helpers (exported for sub-files)
 -------------------------------------------------------------------------------
 
+ST._perf = ST._perf or { enabled = false, stats = {} };
+
+function ST:SetPerfEnabled(enabled)
+    local on = enabled and true or false;
+    ST._perf.enabled = on;
+    if (RRTDB and RRTDB.Settings) then
+        RRTDB.Settings.SpellTrackerPerf = on;
+    end
+end
+
+function ST:ResetPerfStats()
+    if (ST._perf) then
+        ST._perf.stats = {};
+    end
+end
+
+function ST:_PerfStart()
+    if (not ST._perf or not ST._perf.enabled) then return nil; end
+    return debugprofilestop();
+end
+
+function ST:_PerfStop(metric, startedAt)
+    if (not metric or not startedAt or not ST._perf or not ST._perf.enabled) then return; end
+    local elapsed = debugprofilestop() - startedAt;
+    local s = ST._perf.stats[metric];
+    if (not s) then
+        s = { count = 0, total = 0, max = 0 };
+        ST._perf.stats[metric] = s;
+    end
+    s.count = s.count + 1;
+    s.total = s.total + elapsed;
+    if (elapsed > s.max) then s.max = elapsed; end
+end
+
+function ST:GetPerfReport()
+    local perf = ST._perf;
+    if (not perf) then return "SpellTracker perf unavailable."; end
+    local lines = {};
+    table.insert(lines, string.format("SpellTracker perf: %s", perf.enabled and "ON" or "OFF"));
+
+    local rows = {};
+    for name, s in pairs(perf.stats or {}) do
+        local avg = (s.count > 0) and (s.total / s.count) or 0;
+        table.insert(rows, { name = name, count = s.count, total = s.total, avg = avg, max = s.max });
+    end
+    table.sort(rows, function(a, b) return a.total > b.total; end);
+
+    if (#rows == 0) then
+        table.insert(lines, "No samples yet.");
+        return table.concat(lines, "\n");
+    end
+
+    local limit = math.min(8, #rows);
+    for i = 1, limit do
+        local r = rows[i];
+        table.insert(lines, string.format(
+            "%d) %s - total %.2fms, avg %.3fms, max %.3fms, n=%d",
+            i, r.name, r.total, r.avg, r.max, r.count
+        ));
+    end
+    return table.concat(lines, "\n");
+end
+
 local _textureCache = {};
 
 function ST._GetSpellTexture(spellID)
@@ -43,11 +106,23 @@ function ST._GetSpellTexture(spellID)
 end
 
 function ST._GetFontPath(fontName)
+    if (not fontName or fontName == "" or fontName == "Global Font") then
+        fontName = (RRTDB and RRTDB.Settings and RRTDB.Settings.GlobalFont) or "Friz Quadrata TT";
+    end
     if (LSM) then
         local path = LSM:Fetch("font", fontName);
         if (path) then return path; end
     end
     return "Fonts\\FRIZQT__.TTF";
+end
+
+function ST._ResolveFrameFontSize(frameConfig, fallback, minSize, maxSize)
+    local size = tonumber(frameConfig and frameConfig.fontSize) or fallback or 12;
+    local minV = minSize or 8;
+    local maxV = maxSize or 40;
+    if (size < minV) then size = minV; end
+    if (size > maxV) then size = maxV; end
+    return math.floor(size + 0.5);
 end
 
 function ST._FormatTime(seconds)
@@ -331,7 +406,11 @@ function ST._CreateTitleBar(frame, frameIndex, frameConfig)
     titleBg:SetVertexColor(0.1, 0.1, 0.1, 0.8);
 
     local titleText = title:CreateFontString(nil, "OVERLAY");
-    titleText:SetFont(ST._GetFontPath(frameConfig.font), 12, frameConfig.fontOutline or "OUTLINE");
+    titleText:SetFont(
+        ST._GetFontPath(frameConfig.font),
+        ST._ResolveFrameFontSize(frameConfig, 12, 8, 40),
+        frameConfig.fontOutline or "OUTLINE"
+    );
     titleText:SetPoint("CENTER", 0, 0);
     titleText:SetText("|cFF4DB7FF" .. label .. " (unlocked)|r");
     title.text = titleText;
@@ -345,11 +424,23 @@ end
 -- Visibility and RefreshDisplay (coordinator)
 -------------------------------------------------------------------------------
 
-local function ShouldBeVisible()
-    return IsInGroup() or IsInRaid();
+local _refreshQueued = false;
+function ST:RequestRefreshDisplay()
+    if (_refreshQueued) then return; end
+    _refreshQueued = true;
+    C_Timer.After(0, function()
+        _refreshQueued = false;
+        if (ST and ST.RefreshDisplay) then
+            ST:RefreshDisplay();
+        end
+    end);
 end
 
 function ST:RefreshDisplay()
+    local _perfStart = ST:_PerfStart();
+    local function _perfDone()
+        ST:_PerfStop("RefreshDisplay", _perfStart);
+    end
     -- Auto-disable preview when settings panel closes
     if (ST._previewActive) then
         local panelOpen = false;
@@ -359,6 +450,7 @@ function ST:RefreshDisplay()
         if (ST._embeddedPanelOpen) then panelOpen = true; end
         if (not panelOpen) then
             ST:DeactivatePreview();
+            _perfDone();
             return;
         end
     end
@@ -368,7 +460,10 @@ function ST:RefreshDisplay()
     local inGroup = inParty or inRaid;
     local show = inGroup or ST._previewActive;
     local db = self.db;
-    if (not db or not db.frames) then return; end
+    if (not db or not db.frames) then
+        _perfDone();
+        return;
+    end
 
     -- Remove orphan display frames that no longer exist in saved config.
     for frameIndex, display in pairs(self.displayFrames) do
@@ -474,6 +569,7 @@ function ST:RefreshDisplay()
     if (interruptConfig) then
         RenderFrame("interrupts", interruptConfig);
     end
+    _perfDone();
 end
 
 -------------------------------------------------------------------------------

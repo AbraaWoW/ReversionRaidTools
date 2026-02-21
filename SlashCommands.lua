@@ -1,5 +1,17 @@
 local _, RRT = ... -- Internal namespace
 
+local function PrintPerfReport()
+    local ST = RRT and RRT.SpellTracker
+    if (not ST or not ST.GetPerfReport) then
+        print("|cFF00FFFFRRT|r SpellTracker perf module unavailable.")
+        return
+    end
+    local report = ST:GetPerfReport() or "No data."
+    for line in string.gmatch(report, "[^\n]+") do
+        print("|cFF00FFFFRRT|r " .. line)
+    end
+end
+
 SLASH_RRTUI1 = "/rrt"
 SlashCmdList["RRTUI"] = function(msg)
     if msg == "wipe" then
@@ -67,6 +79,32 @@ SlashCmdList["RRTUI"] = function(msg)
         if RRT.RRTUI.MenuFrame and RRT.RRTUI.MenuFrame.SelectTabByName then
             RRT.RRTUI.MenuFrame:SelectTabByName("BuffReminders")
         end
+    elseif msg == "perf on" then
+        local ST = RRT and RRT.SpellTracker
+        if (ST and ST.SetPerfEnabled) then
+            ST:SetPerfEnabled(true)
+            print("|cFF00FFFFRRT|r SpellTracker perf ON")
+        else
+            print("|cFF00FFFFRRT|r SpellTracker perf unavailable.")
+        end
+    elseif msg == "perf off" then
+        local ST = RRT and RRT.SpellTracker
+        if (ST and ST.SetPerfEnabled) then
+            ST:SetPerfEnabled(false)
+            print("|cFF00FFFFRRT|r SpellTracker perf OFF")
+        else
+            print("|cFF00FFFFRRT|r SpellTracker perf unavailable.")
+        end
+    elseif msg == "perf reset" then
+        local ST = RRT and RRT.SpellTracker
+        if (ST and ST.ResetPerfStats) then
+            ST:ResetPerfStats()
+            print("|cFF00FFFFRRT|r SpellTracker perf stats reset")
+        else
+            print("|cFF00FFFFRRT|r SpellTracker perf unavailable.")
+        end
+    elseif msg == "perf" or msg == "perf report" then
+        PrintPerfReport()
     elseif msg == "help" then
         print("|cFF00FFFFRRT|r Available commands: (use '/rrt')\n")
         print("  |cFF00FFFF/rrt debug|r - Toggle debug mode - mainly used for development")
@@ -82,6 +120,10 @@ SlashCmdList["RRTUI"] = function(msg)
         print("  |cFF00FFFF/rrt tnote|r or |cFF00FFFF/rrt tn|r - Toggle text note")
         print("  |cFF00FFFF/rrt timeline|r or |cFF00FFFF/rrt tl|r - Toggle timeline window")
         print("  |cFF00FFFF/rrt br|r - Open Buff Reminders tab")
+        print("  |cFF00FFFF/rrt perf on|r - Enable lightweight SpellTracker CPU profiling")
+        print("  |cFF00FFFF/rrt perf off|r - Disable SpellTracker CPU profiling")
+        print("  |cFF00FFFF/rrt perf reset|r - Reset profiling counters")
+        print("  |cFF00FFFF/rrt perf|r - Show profiling report")
     elseif msg == "" then
         RRT.RRTUI:ToggleOptions()
     elseif msg then

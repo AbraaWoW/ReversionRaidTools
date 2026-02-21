@@ -21,6 +21,8 @@ local TABS_LIST = {
     { name = "PrivateAura", text = "Private Auras"},
     { name = "QoL", text = "Quality of Life" },
     { name = "BuffReminders", text = "Buff Reminders" },
+    { name = "RaidInspect", text = "Raid Inspect" },
+    { name = "Profiles", text = "Profiles" },
 }
 
 local authorsString = "By Abraa"
@@ -53,7 +55,7 @@ RRTUI.OptionsChanged = {
 }
 
 -- Shared helper functions
-local function build_media_options(typename, settingname, isTexture, isReminder, Personal, GlobalFont)
+local function build_media_options(typename, settingname, isTexture, isReminder, _unusedPersonal, GlobalFont)
     local list = RRT.LSM:List(isTexture and "statusbar" or "font")
     local t = {}
     for i, font in ipairs(list) do
@@ -63,6 +65,9 @@ local function build_media_options(typename, settingname, isTexture, isReminder,
             onclick = function(_, _, value)
                 if GlobalFont then
                     RRTDB.Settings.GlobalFont = list[value]
+                    if (RRT and RRT.ApplyGlobalFontToAddonUI) then
+                        RRT:ApplyGlobalFontToAddonUI(false, true)
+                    end
                     return
                 end
                 RRTDB.ReminderSettings[typename][settingname] = list[value]
@@ -156,6 +161,205 @@ local function apply_scrollbar_style(scrollObject)
         pcall(function()
             DF:ReskinSlider(scrollObject.ScrollBar)
         end)
+    end
+end
+
+local function get_global_font_path()
+    local fontName = (RRTDB and RRTDB.Settings and RRTDB.Settings.GlobalFont) or "Friz Quadrata TT"
+    if (RRT and RRT.LSM and RRT.LSM.Fetch) then
+        local fetched = RRT.LSM:Fetch("font", fontName)
+        if (fetched and fetched ~= "") then
+            return fetched
+        end
+    end
+    return "Fonts\\FRIZQT__.TTF"
+end
+
+local function set_fontstring_font(fs, fontPath)
+    if (not fs or not fs.GetObjectType or fs:GetObjectType() ~= "FontString") then
+        return
+    end
+    local _, size, flags = fs:GetFont()
+    local finalSize = tonumber(size) or 10
+    pcall(fs.SetFont, fs, fontPath, finalSize, flags or "")
+end
+
+local function apply_font_recursive(obj, fontPath, visited)
+    if (not obj or visited[obj]) then
+        return
+    end
+    visited[obj] = true
+
+    if (obj.GetObjectType) then
+        if (obj:GetObjectType() == "FontString") then
+            set_fontstring_font(obj, fontPath)
+        end
+
+        if (obj.GetRegions) then
+            local regions = { obj:GetRegions() }
+            for i = 1, #regions do
+                local region = regions[i]
+                if (region and region.GetObjectType and region:GetObjectType() == "FontString") then
+                    set_fontstring_font(region, fontPath)
+                end
+            end
+        end
+
+        if (obj.GetChildren) then
+            local children = { obj:GetChildren() }
+            for i = 1, #children do
+                apply_font_recursive(children[i], fontPath, visited)
+            end
+        end
+    end
+end
+
+local function apply_global_font_to_df_templates(fontPath)
+    if (options_text_template) then
+        options_text_template.font = fontPath
+    end
+    if (options_button_template) then
+        options_button_template.textfont = fontPath
+    end
+    if (options_dropdown_template) then
+        options_dropdown_template.textfont = fontPath
+    end
+    if (options_switch_template) then
+        options_switch_template.textfont = fontPath
+    end
+    if (options_slider_template) then
+        options_slider_template.textfont = fontPath
+    end
+
+    local fontTemplates = DF and DF.font_templates
+    if (fontTemplates) then
+        if (fontTemplates["OPTIONS_FONT_TEMPLATE"]) then
+            fontTemplates["OPTIONS_FONT_TEMPLATE"].font = fontPath
+        end
+        if (fontTemplates["ORANGE_FONT_TEMPLATE"]) then
+            fontTemplates["ORANGE_FONT_TEMPLATE"].font = fontPath
+        end
+        if (fontTemplates["SMALL_SILVER"]) then
+            fontTemplates["SMALL_SILVER"].font = fontPath
+        end
+    end
+
+    local buttonTemplates = DF and DF.button_templates
+    if (buttonTemplates and buttonTemplates["OPTIONS_BUTTON_TEMPLATE"]) then
+        buttonTemplates["OPTIONS_BUTTON_TEMPLATE"].textfont = fontPath
+    end
+    local dropdownTemplates = DF and DF.dropdown_templates
+    if (dropdownTemplates and dropdownTemplates["OPTIONS_DROPDOWN_TEMPLATE"]) then
+        dropdownTemplates["OPTIONS_DROPDOWN_TEMPLATE"].textfont = fontPath
+    end
+    local switchTemplates = DF and DF.switch_templates
+    if (switchTemplates and switchTemplates["OPTIONS_CHECKBOX_TEMPLATE"]) then
+        switchTemplates["OPTIONS_CHECKBOX_TEMPLATE"].textfont = fontPath
+    end
+    local sliderTemplates = DF and DF.slider_templates
+    if (sliderTemplates and sliderTemplates["OPTIONS_SLIDER_TEMPLATE"]) then
+        sliderTemplates["OPTIONS_SLIDER_TEMPLATE"].textfont = fontPath
+    end
+end
+
+local function apply_templates_to_options_widget(widget)
+    if (not widget) then
+        return
+    end
+
+    if (widget.hasLabel and widget.hasLabel.SetTemplate) then
+        pcall(widget.hasLabel.SetTemplate, widget.hasLabel, options_text_template)
+    end
+
+    local widgetType = widget.widget_type
+    if (widget.SetTemplate) then
+        if (widgetType == "label") then
+            pcall(widget.SetTemplate, widget, options_text_template)
+        elseif (widgetType == "select") then
+            pcall(widget.SetTemplate, widget, options_dropdown_template)
+        elseif (widgetType == "toggle") then
+            pcall(widget.SetTemplate, widget, options_switch_template)
+        elseif (widgetType == "range") then
+            pcall(widget.SetTemplate, widget, options_slider_template)
+        elseif (widgetType == "execute") then
+            pcall(widget.SetTemplate, widget, options_button_template)
+        elseif (widgetType == "textentry") then
+            pcall(widget.SetTemplate, widget, options_dropdown_template)
+        end
+    end
+end
+
+local function refresh_options_panel_font(panel)
+    if (not panel) then
+        return
+    end
+
+    if (type(panel.widget_list) == "table") then
+        for i = 1, #panel.widget_list do
+            apply_templates_to_options_widget(panel.widget_list[i])
+        end
+    end
+end
+
+function RRT:ApplyGlobalFontToAddonUI(skipTrackerRefresh, forceApply)
+    local fontPath = get_global_font_path()
+    if (not forceApply and self._lastAppliedGlobalFontPath == fontPath) then
+        return
+    end
+    self._lastAppliedGlobalFontPath = fontPath
+
+    apply_global_font_to_df_templates(fontPath)
+
+    local visited = {}
+    local roots = {}
+
+    local function AddRoot(root)
+        if (root) then
+            roots[#roots + 1] = root
+        end
+    end
+
+    AddRoot(RRT.RRTUI)
+    AddRoot(RRT.RRTFrame)
+    AddRoot(RRT.RaidBuffCheck)
+
+    if (RRT.RRTUI) then
+        AddRoot(RRT.RRTUI.MenuFrame)
+        AddRoot(RRT.RRTUI.version_scrollbox)
+        AddRoot(RRT.RRTUI.nickname_frame)
+        AddRoot(RRT.RRTUI.cooldowns_frame)
+        AddRoot(RRT.RRTUI.reminders_frame)
+        AddRoot(RRT.RRTUI.pasound_frame)
+        AddRoot(RRT.RRTUI.personal_reminders_frame)
+        AddRoot(RRT.RRTUI.export_string_popup)
+        AddRoot(RRT.RRTUI.import_string_popup)
+        AddRoot(RRT.RRTUI.StatusBar)
+    end
+
+    if (RRT.SpellTracker and RRT.SpellTracker.displayFrames) then
+        for _, display in pairs(RRT.SpellTracker.displayFrames) do
+            AddRoot(display.frame)
+            AddRoot(display.title)
+        end
+    end
+
+    for i = 1, #roots do
+        apply_font_recursive(roots[i], fontPath, visited)
+    end
+
+    if (RRT.RRTUI and RRT.RRTUI.MenuFrame) then
+        for i = 1, #TABS_LIST do
+            local tabName = TABS_LIST[i] and TABS_LIST[i].name
+            if (tabName and RRT.RRTUI.MenuFrame.GetTabFrameByName) then
+                local tab = RRT.RRTUI.MenuFrame:GetTabFrameByName(tabName)
+                refresh_options_panel_font(tab)
+            end
+        end
+    end
+    refresh_options_panel_font(RRT.RaidBuffCheck)
+
+    if (not skipTrackerRefresh and RRT.SpellTracker and RRT.SpellTracker.RefreshDisplay) then
+        RRT.SpellTracker:RefreshDisplay()
     end
 end
 

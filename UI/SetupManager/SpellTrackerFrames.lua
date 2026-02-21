@@ -228,6 +228,23 @@ local function MakeDropdown(parent, x, y, width, labelText, options, labels, get
     return y - 48, dd
 end
 
+local function BuildFontDropdownData()
+    local options = { "Global Font" }
+    local labels = { ["Global Font"] = "Global Font (RRT)" }
+
+    if (RRT and RRT.LSM and RRT.LSM.List) then
+        local listed = RRT.LSM:List("font") or {}
+        for _, fontName in ipairs(listed) do
+            if (type(fontName) == "string" and fontName ~= "" and not labels[fontName]) then
+                table.insert(options, fontName)
+                labels[fontName] = fontName
+            end
+        end
+    end
+
+    return options, labels
+end
+
 local function MakeScrollContent(parent)
     local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 0, 0); scroll:SetPoint("BOTTOMRIGHT", -20, 0)
@@ -263,7 +280,7 @@ local function BuildFrameSettings(ST, content, frameIndex, yOff, Track, Rebuild)
     local function DestroyAndRefresh()
         local d = ST.displayFrames and ST.displayFrames[frameIndex]
         if d then if d.frame then d.frame:Hide(); d.frame:SetParent(nil) end; ST.displayFrames[frameIndex] = nil end
-        ST:RefreshDisplay()
+        ST:RequestRefreshDisplay()
     end
 
     yOff = MakeHeader(content, PADDING + 4, yOff, "Frame Settings", Track)
@@ -287,29 +304,29 @@ local function BuildFrameSettings(ST, content, frameIndex, yOff, Track, Rebuild)
 
     yOff, _ = MakeSwitch(content, PADDING + 4, yOff, 220, "Enable",
         function() return frameConfig.enabled end,
-        function(v) frameConfig.enabled = v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.enabled = v; ST:RequestRefreshDisplay() end, Track)
 
     yOff, _ = MakeDropdown(content, PADDING + 4, yOff, 220, "Sort Order",
         SORT_MODE_OPTIONS, SORT_MODE_LABELS,
         function() return frameConfig.sortMode or "remaining" end,
-        function(v) frameConfig.sortMode = v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.sortMode = v; ST:RequestRefreshDisplay() end, Track)
 
     yOff, _ = MakeSwitch(content, PADDING + 4, yOff, 220, "Show Self",
         function() return frameConfig.showSelf end,
-        function(v) frameConfig.showSelf = v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.showSelf = v; ST:RequestRefreshDisplay() end, Track)
 
     yOff, _ = MakeSwitch(content, PADDING + 4, yOff, 220, "Self On Top",
         function() return frameConfig.selfOnTop end,
-        function(v) frameConfig.selfOnTop = v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.selfOnTop = v; ST:RequestRefreshDisplay() end, Track)
 
     local layout = frameConfig.layout or "bar"
     if layout == "bar" then
         yOff, _ = MakeSlider(content, PADDING + 4, yOff, 220, "Bar Width", 120, 400, 1,
             function() return frameConfig.barWidth or 220 end,
-            function(v) frameConfig.barWidth = v; ST:RefreshBarLayout(frameIndex); ST:RefreshDisplay() end, Track)
+            function(v) frameConfig.barWidth = v; ST:RefreshBarLayout(frameIndex); ST:RequestRefreshDisplay() end, Track)
         yOff, _ = MakeSlider(content, PADDING + 4, yOff, 220, "Bar Height", 16, 40, 1,
             function() return frameConfig.barHeight or 28 end,
-            function(v) frameConfig.barHeight = v; ST:RefreshBarLayout(frameIndex); ST:RefreshDisplay() end, Track)
+            function(v) frameConfig.barHeight = v; ST:RefreshBarLayout(frameIndex); ST:RequestRefreshDisplay() end, Track)
         yOff, _ = MakeDropdown(content, PADDING + 4, yOff, 220, "Grow Direction",
             GROW_DIR_OPTIONS, GROW_DIR_LABELS,
             function() return frameConfig.growUp and "up" or "down" end,
@@ -320,7 +337,7 @@ local function BuildFrameSettings(ST, content, frameIndex, yOff, Track, Rebuild)
             function(v) frameConfig.iconSize = v; ST:RefreshIconLayout(frameIndex) end, Track)
         yOff, _ = MakeSwitch(content, PADDING + 4, yOff, 220, "Show Names",
             function() return frameConfig.showNames end,
-            function(v) frameConfig.showNames = v; ST:RefreshDisplay() end, Track)
+            function(v) frameConfig.showNames = v; ST:RequestRefreshDisplay() end, Track)
     end
 
     yOff, _ = MakeSwitch(content, PADDING + 4, yOff, 220, "Lock Position",
@@ -376,14 +393,14 @@ local function BuildFrameSpells(ST, content, frameIndex, yOff, Track, Rebuild, s
             if (not spellFilter or spell.category == spellFilter) and spell.category ~= "interrupt" then
                 selectedSpells[id] = true
             end
-        end; ST:RefreshDisplay(); Rebuild()
+        end; ST:RequestRefreshDisplay(); Rebuild()
     end, Track)
     MakeButton(content, PADDING + 98, yOff, 90, ROW_HEIGHT, "Deselect All", function()
         for id in pairs(selectedSpells) do
             if not spellFilter or (ST.spellDB and ST.spellDB[id] and ST.spellDB[id].category == spellFilter) then
                 selectedSpells[id] = nil
             end
-        end; ST:RefreshDisplay(); Rebuild()
+        end; ST:RequestRefreshDisplay(); Rebuild()
     end, Track)
 
     local filterDefs = {
@@ -474,7 +491,7 @@ local function BuildFrameSpells(ST, content, frameIndex, yOff, Track, Rebuild, s
                     class=addClass=="CUSTOM" and "Custom" or addClass, specs=nil, category=addCat }
             end
             selectedSpells[id] = true; spellInput:SetText(""); cdInput:SetText("0"); spellPrev:SetText("")
-            ST:RefreshDisplay(); Rebuild()
+            ST:RequestRefreshDisplay(); Rebuild()
         end
         spellInput:SetHook("OnEnterPressed", DoAdd)
         MakeButton(content, nx, yOff - 14, 70, ROW_HEIGHT - 2, "+ Add", DoAdd, Track)
@@ -525,7 +542,7 @@ local function BuildFrameSpells(ST, content, frameIndex, yOff, Track, Rebuild, s
             dbg:SetVertexColor(0.4, 0.1, 0.1, 1)
             delTxt:SetTextColor(1, 0.6, 0.6, 1)
         end)
-        del:SetScript("OnClick", function() ST.spellDB[spellID]=nil; selectedSpells[spellID]=nil; ST:RefreshDisplay(); Rebuild() end)
+        del:SetScript("OnClick", function() ST.spellDB[spellID]=nil; selectedSpells[spellID]=nil; ST:RequestRefreshDisplay(); Rebuild() end)
     end
 
     -- Two-column class layout
@@ -554,7 +571,7 @@ local function BuildFrameSpells(ST, content, frameIndex, yOff, Track, Rebuild, s
                 local spellID = spell.id; local chk = selectedSpells[spellID] or false
                 local txt = spell.name.." |cFF888888["..spell.category.."]|r"
                 CreateSpellToggle(content, cX+4, cY, colW-4, spellID, txt, chk, function(val)
-                    if val then selectedSpells[spellID]=true else selectedSpells[spellID]=nil end; ST:RefreshDisplay()
+                    if val then selectedSpells[spellID]=true else selectedSpells[spellID]=nil end; ST:RequestRefreshDisplay()
                 end); cY = cY - 20
             end; cY = cY - 10
         end; if cY < lowestY then lowestY = cY end
@@ -570,10 +587,12 @@ local function BuildFrameDisplay(ST, content, frameIndex, yOff, Track, Rebuild)
     local frameConfig = ST:GetFrameConfig(frameIndex); if not frameConfig then return yOff end
     local function DAR()
         local d = ST.displayFrames and ST.displayFrames[frameIndex]
-        if d then if d.frame then d.frame:Hide(); d.frame:SetParent(nil) end; ST.displayFrames[frameIndex]=nil end; ST:RefreshDisplay()
+        if d then if d.frame then d.frame:Hide(); d.frame:SetParent(nil) end; ST.displayFrames[frameIndex]=nil end; ST:RequestRefreshDisplay()
     end
 
     yOff = MakeHeader(content, PADDING + 4, yOff, "Display Settings", Track)
+
+    local fontOptions, fontLabels = BuildFontDropdownData()
 
     yOff, _ = MakeDropdown(content, PADDING+4, yOff, 220, "Layout", LAYOUT_OPTIONS, LAYOUT_LABELS,
         function() return frameConfig.layout or "bar" end,
@@ -581,22 +600,40 @@ local function BuildFrameDisplay(ST, content, frameIndex, yOff, Track, Rebuild)
     yOff, _ = MakeSlider(content, PADDING+4, yOff, 220, "Scale", 70, 180, 1,
         function() return math.floor((frameConfig.displayScale or 1)*100) end,
         function(v) frameConfig.displayScale=v/100
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
+        end, Track)
+    yOff, _ = MakeDropdown(content, PADDING+4, yOff, 220, "Font", fontOptions, fontLabels,
+        function() return frameConfig.font or "Global Font" end,
+        function(v) frameConfig.font = v or "Global Font"
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
+        end, Track)
+    yOff, _ = MakeSlider(content, PADDING+4, yOff, 220, "Font Size", 8, 32, 1,
+        function()
+            if frameConfig.fontSize then
+                return frameConfig.fontSize
+            end
+            if (frameConfig.layout == "bar") then
+                return math.max(10, math.floor((frameConfig.barHeight or 28) * 0.5))
+            end
+            return math.max(10, math.floor((frameConfig.iconSize or 28) * 0.45))
+        end,
+        function(v) frameConfig.fontSize=v
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
         end, Track)
     yOff, _ = MakeDropdown(content, PADDING+4, yOff, 220, "Font Outline", OUTLINE_OPTIONS, OUTLINE_LABELS,
         function() return frameConfig.fontOutline or "OUTLINE" end,
         function(v) frameConfig.fontOutline=v
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
         end, Track)
     yOff, _ = MakeSlider(content, PADDING+4, yOff, 220, "Opacity", 0, 100, 1,
         function() return math.floor((frameConfig.barAlpha or 1)*100) end,
         function(v) frameConfig.barAlpha=v/100
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
         end, Track)
     yOff, _ = MakeSlider(content, PADDING+4, yOff, 220, "Spacing", 0, 12, 1,
         function() return frameConfig.iconSpacing or 2 end,
         function(v) frameConfig.iconSpacing=v
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout(frameIndex) else ST:RefreshIconLayout(frameIndex) end; ST:RequestRefreshDisplay()
         end, Track)
     return yOff
 end
@@ -609,7 +646,7 @@ local function BuildInterruptsContent(ST, content, yOff, Track, Rebuild)
     local frameConfig = ST:GetFrameConfig("interrupts"); if not frameConfig then return yOff end
     local function DAR()
         local d = ST.displayFrames and ST.displayFrames["interrupts"]
-        if d then if d.frame then d.frame:Hide(); d.frame:SetParent(nil) end; ST.displayFrames["interrupts"]=nil end; ST:RefreshDisplay()
+        if d then if d.frame then d.frame:Hide(); d.frame:SetParent(nil) end; ST.displayFrames["interrupts"]=nil end; ST:RequestRefreshDisplay()
     end
 
     yOff = MakeHeader(content, PADDING + 4, yOff, "Interrupts Frame", Track)
@@ -619,32 +656,32 @@ local function BuildInterruptsContent(ST, content, yOff, Track, Rebuild)
         function(v) if frameConfig.layout~=v then frameConfig.layout=v; DAR(); Rebuild() end end, Track)
     yOff, _ = MakeDropdown(content, PADDING+4, yOff, 220, "Show In", GROUP_MODE_OPTIONS, GROUP_MODE_LABELS,
         function() return frameConfig.groupMode or "any" end,
-        function(v) frameConfig.groupMode=v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.groupMode=v; ST:RequestRefreshDisplay() end, Track)
     yOff, _ = MakeDropdown(content, PADDING+4, yOff, 220, "Grow Direction", GROW_DIR_OPTIONS, GROW_DIR_LABELS,
         function() return frameConfig.growUp and "up" or "down" end,
         function(v) frameConfig.growUp=(v=="up"); DAR(); Rebuild() end, Track)
     yOff, _ = MakeSwitch(content, PADDING+4, yOff, 280, "Enable",
         function() return frameConfig.enabled end,
-        function(v) frameConfig.enabled=v; if v and ST._previewActive then ST:DeactivatePreview() end; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.enabled=v; if v and ST._previewActive then ST:DeactivatePreview() end; ST:RequestRefreshDisplay() end, Track)
     yOff, _ = MakeSwitch(content, PADDING+4, yOff, 280, "Lock Position",
         function() return frameConfig.locked end,
         function(v) frameConfig.locked=v
             local d=ST.displayFrames and ST.displayFrames["interrupts"]
             if d and d.title then if v then d.title:Hide() else d.title:Show() end end
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RequestRefreshDisplay()
         end, Track)
     yOff, _ = MakeSwitch(content, PADDING+4, yOff, 280, "Hide Out of Combat",
         function() return frameConfig.hideOutOfCombat end,
-        function(v) frameConfig.hideOutOfCombat=v; ST:RefreshDisplay() end, Track)
+        function(v) frameConfig.hideOutOfCombat=v; ST:RequestRefreshDisplay() end, Track)
     yOff, _ = MakeSwitch(content, PADDING+4, yOff, 280, "Show Player Names",
         function() return frameConfig.showNames end,
         function(v) frameConfig.showNames=v
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RequestRefreshDisplay()
         end, Track)
     yOff, _ = MakeSlider(content, PADDING+4, yOff, 220, "Scale", 70, 180, 1,
         function() return math.floor((frameConfig.displayScale or 1)*100) end,
         function(v) frameConfig.displayScale=v/100
-            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RefreshDisplay()
+            if frameConfig.layout=="bar" then ST:RefreshBarLayout("interrupts") else ST:RefreshIconLayout("interrupts") end; ST:RequestRefreshDisplay()
         end, Track)
 
     yOff = yOff - 4
@@ -733,7 +770,7 @@ local function BuildFramesUI(parent)
             if idx <= before then ST:Print("Unable to create a new frame."); return end
             local fc = ST:GetFrameConfig(idx)
             if fc then fc.locked=false; fc.position={point="CENTER",relativePoint="CENTER",x=0,y=-150} end
-            _selectedFrameIndex=idx; _frameTabs[idx]="settings"; Rebuild(); ST:RefreshDisplay()
+            _selectedFrameIndex=idx; _frameTabs[idx]="settings"; Rebuild(); ST:RequestRefreshDisplay()
             if not ST._previewActive and not IsInGroup() and not IsInRaid() then
                 ST:ActivatePreview(); ST:Print("Preview enabled for new frame."); Rebuild()
             end
@@ -765,7 +802,7 @@ local function BuildFramesUI(parent)
                 ST:DeleteCustomFrame(fIdx)
                 local nt={}; for idx,v in pairs(_frameTabs) do if idx>fIdx then nt[idx-1]=v elseif idx<fIdx then nt[idx]=v end end; _frameTabs=nt
                 local rem=#(ST.db and ST.db.frames or {}); _selectedFrameIndex=rem>0 and math.max(1,math.min(_selectedFrameIndex,rem)) or 1
-                Rebuild(); ST:RefreshDisplay()
+                Rebuild(); ST:RequestRefreshDisplay()
             end)
             sideY = sideY - 26
         end; sideY = sideY - 6
@@ -883,3 +920,4 @@ RRT.UI = RRT.UI or {}
 RRT.UI.SetupManager = RRT.UI.SetupManager or {}
 RRT.UI.SetupManager.SpellTrackerFrames     = { BuildUI = BuildFramesUI     }
 RRT.UI.SetupManager.SpellTrackerInterrupts = { BuildUI = BuildInterruptsUI }
+

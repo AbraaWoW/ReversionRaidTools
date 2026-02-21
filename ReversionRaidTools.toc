@@ -1,6 +1,6 @@
 ## Interface: 120000, 120001
 ## Title: |cFF00FFFFReversion Raid Tools|r
-## Version: 0.1
+## Version: 1.0
 ## IconTexture: Interface\Icons\Ability_Evoker_Reversion2
 ## Author: Reloe, Rav
 ## DefaultState: Enable
@@ -124,6 +124,8 @@ UI/Options/ReadyCheck.lua
 UI/Options/PrivateAuras.lua
 UI/Options/QoL.lua
 UI/Options/BuffReminders.lua
+UI/Options/RaidInspect.lua
+UI/Options/Profiles.lua
 
 # UI - Entry Point (loads all UI modules and initializes)
 RRTUI.lua

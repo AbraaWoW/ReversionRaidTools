@@ -226,12 +226,9 @@ local function BuildToolsTab(parent)
     toolsPanel:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, 0)
     toolsPanel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
     toolsPanel:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
+        bgFile = "Interface\\Buttons\\WHITE8X8",
     })
     toolsPanel:SetBackdropColor(0, 0, 0, 0.18)
-    toolsPanel:SetBackdropBorderColor(0.12, 0.12, 0.12, 0.5)
 
     local colGap = 12
     local colWidth = math.floor((820 - (colGap * 2)) / 3)
@@ -245,12 +242,9 @@ local function BuildToolsTab(parent)
         col:SetSize(colWidth, window_height - 150)
         col:SetPoint("TOPLEFT", toolsPanel, "TOPLEFT", leftPadding + (i - 1) * (colWidth + colGap), -topPadding)
         col:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8X8",
-            edgeFile = "Interface\\Buttons\\WHITE8X8",
-            edgeSize = 1,
+            bgFile = "Interface\\Buttons\\WHITE8X8",
         })
         col:SetBackdropColor(0, 0, 0, 0.12)
-        col:SetBackdropBorderColor(0.16, 0.16, 0.16, 0.45)
         columns[i] = col
     end
 
@@ -291,12 +285,9 @@ local function BuildSetupManagerUI(parent)
     container:SetSize(window_width - 20, window_height - 110)
     container:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -90)
     container:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
+        bgFile = "Interface\\Buttons\\WHITE8X8",
     })
     container:SetBackdropColor(0, 0, 0, 0.2)
-    container:SetBackdropBorderColor(0.1, 0.1, 0.1, 0.4)
 
     local navWidth = 140
     local nav = CreateFrame("Frame", nil, container)

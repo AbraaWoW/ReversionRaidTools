@@ -177,23 +177,39 @@ end
 -------------------------------------------------------------------------------
 
 local function RecordSpellCast(unit, spellID, name)
-    if (not name or ST.excludedPlayers[name]) then return; end
+    local _perfStart = ST._PerfStart and ST:_PerfStart() or nil;
+    if (not name or ST.excludedPlayers[name]) then
+        if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
+        return;
+    end
 
     local resolvedID = ST.spellAliases[spellID] or spellID;
     local spellData = ST.spellDB[resolvedID];
-    if (not spellData) then return; end
+    if (not spellData) then
+        if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
+        return;
+    end
 
     local player = ST.trackedPlayers[name];
     if (not player) then
         local ok, _, cls = pcall(UnitClass, unit);
-        if (not ok or not cls) then return; end
+        if (not ok or not cls) then
+            if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
+            return;
+        end
         RegisterPlayer(name, cls);
         player = ST.trackedPlayers[name];
-        if (not player) then return; end
+        if (not player) then
+            if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
+            return;
+        end
     end
 
     local spellState = player.spells[resolvedID];
-    if (not spellState) then return; end
+    if (not spellState) then
+        if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
+        return;
+    end
 
     local now = GetTime();
 
@@ -220,6 +236,7 @@ local function RecordSpellCast(unit, spellID, name)
     end
 
     ST._recentCasts[name] = now;
+    if (ST._PerfStop) then ST:_PerfStop("RecordSpellCast", _perfStart); end
 end
 
 -------------------------------------------------------------------------------
@@ -456,16 +473,31 @@ local function OnTick(_, elapsed)
     _tickerElapsed = _tickerElapsed + elapsed;
     if (_tickerElapsed < TICK_INTERVAL) then return; end
     _tickerElapsed = 0;
+    local _perfStart = ST._PerfStart and ST:_PerfStart() or nil;
+
+    if (not ST._previewActive and not ST._intTestActive and not IsInGroup()) then
+        if (ST._PerfStop) then ST:_PerfStop("OnTick", _perfStart); end
+        return;
+    end
+    if (not next(ST.trackedPlayers)) then
+        if (ST._PerfStop) then ST:_PerfStop("OnTick", _perfStart); end
+        return;
+    end
 
     local now = GetTime();
+    local needsVisualUpdate = false;
     for _, player in pairs(ST.trackedPlayers) do
         for spellID, s in pairs(player.spells) do
+            if (s.state ~= "ready") then
+                needsVisualUpdate = true;
+            end
             if (s.state == "active" and now >= s.activeEnd) then
                 if (s.maxCharges > 1 and s.charges > 0) then
                     s.state = "ready";
                 else
                     s.state = "cooldown";
                 end
+                needsVisualUpdate = true;
             end
             if (s.state == "cooldown" and now >= s.cdEnd) then
                 if (s.maxCharges > 1) then
@@ -483,13 +515,15 @@ local function OnTick(_, elapsed)
                     s.cdEnd = 0;
                     s.activeEnd = 0;
                 end
+                needsVisualUpdate = true;
             end
         end
     end
 
-    if (ST.RefreshDisplay) then
+    if (needsVisualUpdate and ST.RefreshDisplay) then
         ST:RefreshDisplay();
     end
+    if (ST._PerfStop) then ST:_PerfStop("OnTick", _perfStart); end
 end
 
 -------------------------------------------------------------------------------

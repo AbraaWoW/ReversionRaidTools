@@ -38,11 +38,8 @@ local function BuildBuffRemindersUI(parent)
     container:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -90)
     container:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
     })
     container:SetBackdropColor(0, 0, 0, 0.2)
-    container:SetBackdropBorderColor(0.1, 0.1, 0.1, 0.4)
 
     local navWidth = 140
     local nav = CreateFrame("Frame", nil, container)

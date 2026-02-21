@@ -442,6 +442,70 @@ local function NameColor(name)
     return 0.7, 0.7, 0.7
 end
 
+local ROLE_ICON_TEXTURE = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES"
+local ROLE_ICON_COORDS = {
+    TANK    = { 0 / 64, 19 / 64, 22 / 64, 41 / 64 },
+    HEALER  = { 20 / 64, 39 / 64,  1 / 64, 20 / 64 },
+    DAMAGER = { 20 / 64, 39 / 64, 22 / 64, 41 / 64 },
+}
+
+local function FindGroupUnitByName(name)
+    local target = NormalizeNameToken(name)
+    if not target then return nil end
+    local targetShort = ShortName(target)
+
+    if IsInRaid() then
+        local n = GetNumGroupMembers() or 0
+        for i = 1, n do
+            local rosterName = GetRaidRosterInfo(i)
+            if rosterName then
+                local short = ShortName(rosterName)
+                if rosterName == target or short == targetShort then
+                    return "raid" .. i
+                end
+            end
+        end
+    elseif IsInGroup() then
+        local playerName = UnitName("player")
+        if playerName and ShortName(playerName) == targetShort then
+            return "player"
+        end
+        local n = GetNumSubgroupMembers() or 0
+        for i = 1, n do
+            local unit = "party" .. i
+            local unitName = UnitName(unit)
+            if unitName and ShortName(unitName) == targetShort then
+                return unit
+            end
+        end
+    end
+
+    return nil
+end
+
+local function GetAssignedRoleForName(name)
+    local unit = FindGroupUnitByName(name)
+    if not unit then return nil end
+    local role = UnitGroupRolesAssigned(unit)
+    if role == "TANK" or role == "HEALER" or role == "DAMAGER" then
+        return role
+    end
+    return nil
+end
+
+local function SetRoleIconForName(icon, name)
+    if not icon then return end
+    local role = GetAssignedRoleForName(name)
+    local coords = role and ROLE_ICON_COORDS[role]
+    if not coords then
+        icon:Hide()
+        return
+    end
+    icon:SetTexture(ROLE_ICON_TEXTURE)
+    icon:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
+    icon:Show()
+end
+
 local function GetUnassigned(slots, source)
     local inGrid = {}
     for i = 1, NUM_SLOTS do
@@ -828,6 +892,7 @@ local function BuildRaidGroupsUI(parent)
             eb:SetText(text)
             local r, g, b = NameColor(text)
             eb:SetTextColor(r, g, b, 1)
+            SetRoleIconForName(eb.roleIcon, text)
         end
     end
 
@@ -837,6 +902,7 @@ local function BuildRaidGroupsUI(parent)
             if eb then
                 local r, g, b = NameColor(eb:GetText())
                 eb:SetTextColor(r, g, b, 1)
+                SetRoleIconForName(eb.roleIcon, eb:GetText())
             end
         end
     end
@@ -851,9 +917,11 @@ local function BuildRaidGroupsUI(parent)
                 row.name = short
                 row.label:SetText(short)
                 row.label:SetTextColor(r, g, b, 1)
+                SetRoleIconForName(row.roleIcon, name)
                 row:Show()
             else
                 row.name = nil
+                if row.roleIcon then row.roleIcon:Hide() end
                 row:Hide()
             end
         end
@@ -873,6 +941,7 @@ local function BuildRaidGroupsUI(parent)
         slots[idx] = NormalizeNameToken(text)
         local r, g, b = NameColor(text)
         self:SetTextColor(r, g, b, 1)
+        SetRoleIconForName(self.roleIcon, text)
         RefreshUnassigned()
     end
 
@@ -890,7 +959,7 @@ local function BuildRaidGroupsUI(parent)
         eb:SetAutoFocus(false)
         if eb.SetFontObject and ChatFontNormal then eb:SetFontObject(ChatFontNormal) end
         eb:SetMaxLetters(64)
-        eb:SetTextInsets(2, 2, 0, 0)
+        eb:SetTextInsets(18, 2, 0, 0)
         eb:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
         eb:SetScript("OnEnterPressed",  function(self) self:ClearFocus() end)
         if options_dropdown_template and eb.SetTemplate then
@@ -899,14 +968,22 @@ local function BuildRaidGroupsUI(parent)
             eb:SetTemplate(options_button_template)
         end
 
+        local roleIcon = container:CreateTexture(nil, "ARTWORK")
+        roleIcon:SetSize(12, 12)
+        roleIcon:SetPoint("LEFT", container, "LEFT", 3, 0)
+        roleIcon:Hide()
+        eb.roleIcon = roleIcon
+
         local saved = slots[idx]
         if saved and saved ~= "" then
             eb:SetText(saved)
             local r, g, b = NameColor(saved)
             eb:SetTextColor(r, g, b, 1)
+            SetRoleIconForName(roleIcon, saved)
         else
             eb:SetText("")
             eb:SetTextColor(0.55, 0.55, 0.55, 1)
+            roleIcon:Hide()
         end
 
         eb.slotIdx = idx
@@ -1021,10 +1098,16 @@ local function BuildRaidGroupsUI(parent)
 
         local lbl = row:CreateFontString(nil, "OVERLAY")
         ApplyRRTFont(lbl, 10)
-        lbl:SetPoint("LEFT", row, "LEFT", 2, 0)
+        lbl:SetPoint("LEFT", row, "LEFT", 16, 0)
         lbl:SetJustifyH("LEFT")
         lbl:SetText("")
         row.label = lbl
+
+        local roleIcon = row:CreateTexture(nil, "ARTWORK")
+        roleIcon:SetSize(11, 11)
+        roleIcon:SetPoint("LEFT", row, "LEFT", 2, 0)
+        roleIcon:Hide()
+        row.roleIcon = roleIcon
 
         row:SetScript("OnDragStart", function(self)
             if not self.name then return end

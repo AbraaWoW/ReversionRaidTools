@@ -46,6 +46,8 @@ local BuildPrivateAurasCallback = RRT.UI.Options.PrivateAuras.BuildCallback
 local BuildQoLOptions = RRT.UI.Options.QoL.BuildOptions
 local BuildQoLCallback = RRT.UI.Options.QoL.BuildCallback
 local BuildBuffRemindersUI = RRT.UI.Options.BuffReminders.BuildUI
+local BuildRaidInspectUI = RRT.UI.Options.RaidInspect and RRT.UI.Options.RaidInspect.BuildUI
+local BuildProfilesUI = RRT.UI.Options.Profiles and RRT.UI.Options.Profiles.BuildUI
 
 function RRTUI:Init()
     -- Create the scale bar
@@ -63,6 +65,11 @@ function RRTUI:Init()
     local tabContainer = DF:CreateTabContainer(RRTUI, "Reversion", "RRTUI_TabsTemplate", TABS_LIST, {
         width = window_width,
         height = window_height - 5,
+        button_width = 94,
+        button_height = 18,
+        button_text_size = 9,
+        button_x = 118,
+        button_y = 1,
         backdrop_color = { 0, 0, 0, 0.2 },
         backdrop_border_color = { 0.1, 0.1, 0.1, 0.4 }
     })
@@ -91,6 +98,8 @@ function RRTUI:Init()
     local privateaura_tab = tabContainer:GetTabFrameByName("PrivateAura")
     local QoL_tab = tabContainer:GetTabFrameByName("QoL")
     local buffreminders_tab = tabContainer:GetTabFrameByName("BuffReminders")
+    local raidinspect_tab = tabContainer:GetTabFrameByName("RaidInspect")
+    local profiles_tab = tabContainer:GetTabFrameByName("Profiles")
 
     -- Generic text display
     RRT.RRTFrame.generic_display = CreateFrame("Frame", nil, RRT.RRTFrame, "BackdropTemplate")
@@ -161,6 +170,12 @@ function RRTUI:Init()
         options_dropdown_template, options_switch_template, true, options_slider_template, options_button_template,
         QoL_callback)
     BuildBuffRemindersUI(buffreminders_tab)
+    if BuildRaidInspectUI then
+        BuildRaidInspectUI(raidinspect_tab)
+    end
+    if BuildProfilesUI then
+        BuildProfilesUI(profiles_tab)
+    end
     RRT.RaidBuffCheck:SetMovable(false)
     RRT.RaidBuffCheck:EnableMouse(false)
 
@@ -184,6 +199,20 @@ function RRTUI:Init()
     local versionTitle = "|cFFC9A227Reversion Raid Tools|r"
     local statusBarText = versionTitle .. "|cFFFFFFFF" .. versionNumber .. " | " .. (authorsString) .. "|r"
     RRTUI.StatusBar.authorName:SetText(statusBarText)
+
+    if (RRT.ApplyGlobalFontToAddonUI) then
+        RRT:ApplyGlobalFontToAddonUI(false, true)
+    end
+
+    if (not self._globalFontHooksInstalled) then
+        self._globalFontHooksInstalled = true
+
+        self:HookScript("OnShow", function()
+            if (RRT.ApplyGlobalFontToAddonUI) then
+                RRT:ApplyGlobalFontToAddonUI(true, true)
+            end
+        end)
+    end
 end
 
 function RRTUI:ToggleOptions()
@@ -191,6 +220,9 @@ function RRTUI:ToggleOptions()
         RRTUI:Hide()
     else
         RRTUI:Show()
+        if (RRT.ApplyGlobalFontToAddonUI) then
+            RRT:ApplyGlobalFontToAddonUI(true, true)
+        end
     end
 end
 

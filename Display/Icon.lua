@@ -39,9 +39,10 @@ function ST._BuildIconFrame(frameIndex)
     end
 
     local namePool = {};
+    local nameFontSize = ST._ResolveFrameFontSize(frameConfig, 11, 8, 40);
     for i = 1, 40 do
         local nameLabel = frame:CreateFontString(nil, "OVERLAY");
-        nameLabel:SetFont(ST._GetFontPath(frameConfig.font), 12, frameConfig.fontOutline or "OUTLINE");
+        nameLabel:SetFont(ST._GetFontPath(frameConfig.font), nameFontSize, frameConfig.fontOutline or "OUTLINE");
         nameLabel:SetJustifyH("LEFT");
         nameLabel:SetShadowOffset(1, -1);
         nameLabel:SetShadowColor(0, 0, 0, 1);
@@ -76,6 +77,7 @@ function ST._RenderIconFrame(frameIndex)
     local showNames = frameConfig.showNames;
     local fontPath = ST._GetFontPath(frameConfig.font);
     local outline = frameConfig.fontOutline or "OUTLINE";
+    local nameFontSize = ST._ResolveFrameFontSize(frameConfig, 11, 8, 40);
 
     -- Hide everything first
     for _, ico in ipairs(display.iconPool) do ico:Hide(); end
@@ -116,7 +118,7 @@ function ST._RenderIconFrame(frameIndex)
 
         if (showNames and nameIdx <= #display.namePool) then
             local lbl = display.namePool[nameIdx];
-            lbl:SetFont(fontPath, 11, outline);
+            lbl:SetFont(fontPath, nameFontSize, outline);
             local cr, cg, cb = ST:GetClassColor(playerInfo.class);
             lbl:SetTextColor(cr, cg, cb);
             lbl:SetText(playerInfo.name);
@@ -179,13 +181,15 @@ function ST:RefreshIconLayout(frameIndex)
     local iconSize = frameConfig.iconSize;
     local alpha = frameConfig.barAlpha or 1;
     local scale = frameConfig.displayScale or 1;
+    local baseFontSize = ST._ResolveFrameFontSize(frameConfig, math.max(10, math.floor(iconSize * 0.45)), 8, 40);
+    local nameFontSize = math.max(8, baseFontSize);
     display.frame:SetAlpha(alpha);
     display.frame:SetScale(scale);
 
     if (display.title) then
         local label = frameConfig.isInterruptFrame and "Interrupts" or (frameConfig.name or ("Frame " .. frameIndex));
         if (display.title.text) then
-            display.title.text:SetFont(fontPath, 12, outline);
+            display.title.text:SetFont(fontPath, ST._ResolveFrameFontSize(frameConfig, 12, 8, 40), outline);
         end
         if (frameConfig.locked) then
             display.title:Hide();
@@ -198,13 +202,13 @@ function ST:RefreshIconLayout(frameIndex)
     for _, ico in ipairs(display.iconPool) do
         ico:SetSize(iconSize, iconSize);
         if (ico.text) then
-            local timerFontSize = math.max(10, math.floor(iconSize * 0.45));
+            local timerFontSize = baseFontSize;
             ico.text:SetFont(fontPath, timerFontSize, outline);
         end
     end
 
     for _, lbl in ipairs(display.namePool) do
-        lbl:SetFont(fontPath, 11, outline);
+        lbl:SetFont(fontPath, nameFontSize, outline);
     end
 
     ST._RenderIconFrame(frameIndex);

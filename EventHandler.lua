@@ -132,6 +132,7 @@ function RRT:EventHandler(e, wowevent, internal, ...) -- internal checks whether
             RRTDB.Settings["Minimap"] = RRTDB.Settings["Minimap"] or {hide = false}
             RRTDB.Settings["VersionCheckPresets"] = RRTDB.Settings["VersionCheckPresets"] or {}
             RRTDB.Settings["CooldownThreshold"] = RRTDB.Settings["CooldownThreshold"] or 20
+            if RRTDB.Settings["SpellTrackerPerf"] == nil then RRTDB.Settings["SpellTrackerPerf"] = false end
             if RRTDB.Settings["MissingRaidBuffs"] == nil then RRTDB.Settings["MissingRaidBuffs"] = true end
             if not RRTDB.ReadyCheckSettings then RRTDB.ReadyCheckSettings = {} end
             RRTDB.CooldownList = RRTDB.CooldownList or {}
@@ -218,6 +219,9 @@ function RRT:EventHandler(e, wowevent, internal, ...) -- internal checks whether
         end
     elseif e == "PLAYER_LOGIN" and wowevent then
         self.RRTUI:Init()
+        if self.SpellTracker and self.SpellTracker.SetPerfEnabled and RRTDB and RRTDB.Settings then
+            self.SpellTracker:SetPerfEnabled(RRTDB.Settings["SpellTrackerPerf"])
+        end
         self:InitLDB()
         self:InitQoL()
         self.RRTFrame:SetAllPoints(UIParent)
