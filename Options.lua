@@ -10,6 +10,9 @@ local FONT = "Fonts\\FRIZQT__.TTF";
 local FRAME_WIDTH = 1000;
 local FRAME_HEIGHT = 700;
 local FRAME_NAME = "ReversionRaidToolsOptions";
+local UI_SCALE_MIN = 0.7;
+local UI_SCALE_MAX = 2.0;
+local UI_SCALE_STEP = 0.1;
 
 local COLOR_BG          = { 0.08, 0.08, 0.08, 0.95 };
 local COLOR_SECTION     = { 0.12, 0.12, 0.12, 1.0 };
@@ -133,6 +136,38 @@ local function SkinButton(btn, color, hoverColor, textColor)
     if (textColor) then
         btn._textColor = textColor;
     end
+end
+
+local function ClampUIScale(value)
+    local v = tonumber(value) or 1.0;
+    v = math.max(UI_SCALE_MIN, math.min(UI_SCALE_MAX, v));
+    return math.floor(v * 10 + 0.5) / 10;
+end
+
+local function AddDangerCrossIcon(btn, size)
+    if (not btn) then return; end
+
+    local iconSize = size or 8;
+    local lineA = btn:CreateTexture(nil, "OVERLAY");
+    lineA:SetSize(iconSize, 2);
+    lineA:SetPoint("CENTER", 0, 0);
+    lineA:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+    lineA:SetRotation(math.rad(45));
+
+    local lineB = btn:CreateTexture(nil, "OVERLAY");
+    lineB:SetSize(iconSize, 2);
+    lineB:SetPoint("CENTER", 0, 0);
+    lineB:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+    lineB:SetRotation(math.rad(-45));
+
+    local function SetCrossColor(r, g, b, a)
+        lineA:SetVertexColor(r, g, b, a or 1);
+        lineB:SetVertexColor(r, g, b, a or 1);
+    end
+
+    SetCrossColor(1, 0.85, 0.85, 1);
+    btn:HookScript("OnEnter", function() SetCrossColor(1, 1, 1, 1); end);
+    btn:HookScript("OnLeave", function() SetCrossColor(1, 0.85, 0.85, 1); end);
 end
 
 -------------------------------------------------------------------------------
@@ -359,6 +394,7 @@ local _profileDraftName = "Profile 1";
 local _mainTab = "frames";
 local _selectedProfileName = nil;
 local _spellFilter = nil;
+local _creatingFrame = false;
 
 local function DeepCopyTable(src)
     if (type(src) ~= "table") then return src; end
@@ -726,7 +762,7 @@ local function BuildFrameSpells(content, frameIndex, yOff)
     yOff = yOff - ROW_HEIGHT * 2 - 14;
 
     local function CreateCompactSpellToggle(parent, x, y, width, spellID, text, checked, onToggle)
-        local deleteW = 14;
+        local deleteW = 10;
 
         local row = CreateFrame("Button", nil, parent);
         row:SetPoint("TOPLEFT", x, y);
@@ -768,12 +804,12 @@ local function BuildFrameSpells(content, frameIndex, yOff)
 
         -- Red X button (same style as frame delete)
         local delBtn = CreateFrame("Button", nil, parent);
-        delBtn:SetPoint("TOPLEFT", x + width - deleteW, y + 2);
-        delBtn:SetSize(deleteW, 15);
+        delBtn:SetPoint("TOPLEFT", x + width - deleteW, y + 4);
+        delBtn:SetSize(deleteW, 10);
         SkinButton(delBtn, { 0.4, 0.1, 0.1, 1 }, { 0.6, 0.15, 0.15, 1 });
         Track(delBtn);
         local delText = delBtn:CreateFontString(nil, "OVERLAY");
-        delText:SetFont(FONT, 9, "OUTLINE");
+        delText:SetFont(FONT, 7, "OUTLINE");
         delText:SetPoint("CENTER", 0, 0);
         delText:SetTextColor(1, 0.6, 0.6);
         delText:SetText("X");
@@ -1521,6 +1557,10 @@ BuildContent = function()
 
     -- Sidebar: "New Frame" button
     Track(CreateActionButton(sidebar, 8, sideY, "+ New Frame", SIDEBAR_WIDTH - 16, function()
+        if (_creatingFrame) then return; end
+        _creatingFrame = true;
+        C_Timer.After(0, function() _creatingFrame = false; end);
+
         local before = #(db.frames or {});
         local idx = ST:CreateCustomFrame();
         if (not idx) then idx = #(db.frames or {}); end
@@ -1868,9 +1908,8 @@ local function CreateOptionsFrame()
     local function ApplyUIScale(delta)
         local db = ST.db;
         if not db then return; end
-        local current = math.floor((db.uiScale or 1.0) * 10 + 0.5);
-        current = math.max(7, math.min(20, current + delta));
-        db.uiScale = current / 10;
+        local current = ClampUIScale(db.uiScale or 1.0);
+        db.uiScale = ClampUIScale(current + ((delta or 0) * UI_SCALE_STEP));
         frame:SetScale(db.uiScale);
         scaleLabel:SetText(math.floor(db.uiScale * 100) .. "%");
     end;
@@ -1903,7 +1942,10 @@ local function CreateOptionsFrame()
     end);
 
     -- Apply saved UI scale
-    local initScale = (ST.db and ST.db.uiScale) or 1.0;
+    local initScale = ClampUIScale((ST.db and ST.db.uiScale) or 1.0);
+    if (ST.db) then
+        ST.db.uiScale = initScale;
+    end
     frame:SetScale(initScale);
     scaleLabel:SetText(math.floor(initScale * 100) .. "%");
 
@@ -2380,7 +2422,10 @@ end
 
 function ST:ToggleOptions()
     local frame = CreateOptionsFrame();
-    local s = (ST.db and ST.db.uiScale) or 1.0;
+    local s = ClampUIScale((ST.db and ST.db.uiScale) or 1.0);
+    if (ST.db) then
+        ST.db.uiScale = s;
+    end
     frame:SetScale(s);
     if (frame:IsShown()) then
         frame:Hide();

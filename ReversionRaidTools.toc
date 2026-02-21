@@ -1,30 +1,155 @@
 ## Interface: 120000, 120001
-## Title: Reversion Raid Tools
-## Notes: Customizable raid and party spell cooldown tracking with user-defined frames.
-## Author: Abraa
-## Version: 1.0.0
-## SavedVariables: ReversionRaidToolsDB
-## IconTexture: Interface\Icons\ability_evoker_reversion2
-## OptionalDeps: LibSharedMedia-3.0
-## DefaultState: enabled
+## Title: |cFF00FFFFReversion Raid Tools|r
+## Version: 0.1
+## IconTexture: Interface\Icons\Ability_Evoker_Reversion2
+## Author: Reloe, Rav
+## DefaultState: Enable
+## SavedVariables: RRTDB, ReversionRaidToolsDB, AbraaRaidToolsDB
+## Category: Reversion Raid
+## X-Curse-Project-ID: 954018
+## X-Wago-ID: rN4VDdKD
 
+# Libraries
+Libs\LibStub\LibStub.lua
+Libs\LibSharedMedia-3.0\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+Libs\AceComm-3.0\AceComm-3.0.lua
+Libs\LibTranslit-1.0\LibTranslit-1.0.lua
+Libs\LibCustomGlow-1.0\LibCustomGlow-1.0.lua
+Libs\LibGetFrame-1.0\LibGetFrame-1.0.lua
+Libs\LibSerialize\LibSerialize.lua
+Libs\LibDeflate\LibDeflate.lua
+Libs\AceSerializer-3.0\AceSerializer-3.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Libs\LibDFramework-1.0\fw.lua
+
+# Main Files
+ReversionRaidTools.lua
+Functions.lua
+Reminders.lua
+BossTimelines\BossTimelines.xml
+Timeline.lua
+Media.lua
+Comms.lua
+NickNames.lua
+EventHandler.lua
+VersionCheck.lua
+SetupManager.lua
+CooldownCheck.lua
+ReadyCheck.lua
+PrivateAura.lua
+QoL.lua
+
+# SpellTracker
 Core.lua
-Utils\ClassColors.lua
+Utils/ClassColors.lua
 SpellData.lua
-Trackers\Cooldowns.lua
-Trackers\Defensives.lua
-Trackers\Interrupts.lua
+Trackers/Cooldowns.lua
+Trackers/Defensives.lua
+Trackers/Interrupts.lua
 Frames.lua
 Engine.lua
 Display.lua
-Display\Bar.lua
-Display\Icon.lua
+Display/Bar.lua
+Display/Icon.lua
 Note.lua
 Options.lua
 Profiles.lua
-Tools\BattleRez.lua
-Tools\RaidCheck.lua
-Tools\MarksBar.lua
-Tools\CombatTimer.lua
 RaidGroups.lua
+
+# Encounter Alerts
+EncounterAlerts/MidnightS1/ImperatorAverzian.lua
+EncounterAlerts/MidnightS1/Vorasius.lua
+EncounterAlerts/MidnightS1/FallenKingSalhadaar.lua
+EncounterAlerts/MidnightS1/VaelgorEzzorak.lua
+EncounterAlerts/MidnightS1/LightblindedVanguard.lua
+EncounterAlerts/MidnightS1/CrownOfTheCosmos.lua
+EncounterAlerts/MidnightS1/Chimaerus.lua
+EncounterAlerts/MidnightS1/Beloren.lua
+EncounterAlerts/MidnightS1/MidnightFalls.lua
+EncounterAlerts/MidnightS1/MotherlodeDebug.lua
+
+EncounterAlerts/ManaforgeOmega/NexusKing.lua
+EncounterAlerts/ManaforgeOmega/Dimensius.lua
+
+# Setup Manager Tools (self-contained, no external dependencies)
+Tools/BattleRez.lua
+Tools/CombatTimer.lua
+Tools/MarksBar.lua
+Tools/RaidCheck.lua
+
+# Setup Manager Sub-tab modules
+UI/SetupManager/RaidGroups.lua
+UI/SetupManager/Note.lua
+UI/SetupManager/SpellTrackerFrames.lua
+
+# UI - Core (must load first to create RRTUI panel and shared utilities)
+UI/Core.lua
+
+# UI - Components (depend on Core)
+# BuffReminders Runtime (integrated)
+BuffReminders/Core.lua
+BuffReminders/Data/Buffs.lua
+BuffReminders/Data/ConsumableItems.lua
+BuffReminders/Data/Pets.lua
+BuffReminders/State.lua
+BuffReminders/UI/Components.lua
+BuffReminders/UI/Glow.lua
+BuffReminders/Display/BuffReminders.lua
+BuffReminders/Display/ImportExport.lua
+BuffReminders/Display/Movers.lua
+BuffReminders/Display/SecureButtons.lua
+UI/VersionCheck.lua
+UI/Nicknames.lua
+UI/Reminders.lua
+UI/Cooldowns.lua
+UI/PrivateAuras.lua
+UI/Timeline.lua
+UI/General.lua
+UI/QoL.lua
+UI/BuffReminders/BuffsTab.lua
+UI/BuffReminders/DisplayTab.lua
+UI/BuffReminders/SettingsTab.lua
+UI/BuffReminders/ImportExportTab.lua
+
+# UI - Options (depend on Core)
+UI/Options/General.lua
+UI/Options/Nicknames.lua
+UI/Options/SetupManager.lua
+UI/Options/Reminders.lua
+UI/Options/Assignments.lua
+UI/Options/EncounterAlerts.lua
+UI/Options/ReadyCheck.lua
+UI/Options/PrivateAuras.lua
+UI/Options/QoL.lua
+UI/Options/BuffReminders.lua
+
+# UI - Entry Point (loads all UI modules and initializes)
+RRTUI.lua
+SlashCommands.lua
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

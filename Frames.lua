@@ -3,6 +3,7 @@ local ST = NS.SpellTracker;
 if (not ST) then return; end
 
 local MAX_CUSTOM_FRAMES = 20;
+local CREATE_DEBOUNCE_SECONDS = 0.20;
 
 -------------------------------------------------------------------------------
 -- Custom Frame Management
@@ -10,6 +11,25 @@ local MAX_CUSTOM_FRAMES = 20;
 -- Manages the creation, deletion, and configuration of user-defined frames.
 -- Each frame has its own spell selection, layout settings, and position.
 -------------------------------------------------------------------------------
+
+local function NextAutoFrameName(db)
+    local used = {};
+    for i = 1, #(db.frames or {}) do
+        local cfg = db.frames[i];
+        if (cfg and type(cfg.name) == "string") then
+            local n = tonumber(cfg.name:match("^Frame%s+(%d+)$"));
+            if (n and n > 0) then
+                used[n] = true;
+            end
+        end
+    end
+
+    local idx = 1;
+    while (used[idx]) do
+        idx = idx + 1;
+    end
+    return "Frame " .. idx;
+end
 
 function ST:CreateCustomFrame(name)
     local db = self.db;
@@ -21,7 +41,17 @@ function ST:CreateCustomFrame(name)
         return nil;
     end
 
-    local frameName = name or ("Frame " .. (#db.frames + 1));
+    -- Guard against duplicate creations from accidental double-clicks.
+    local now = (GetTimePreciseSec and GetTimePreciseSec()) or GetTime();
+    if (self._lastCustomFrameCreate and (now - self._lastCustomFrameCreate) < CREATE_DEBOUNCE_SECONDS) then
+        return nil;
+    end
+    self._lastCustomFrameCreate = now;
+
+    local frameName = name;
+    if (type(frameName) ~= "string" or frameName == "") then
+        frameName = NextAutoFrameName(db);
+    end
 
     -- Deep copy defaults
     local newFrame = {};
@@ -81,6 +111,10 @@ function ST:DeleteCustomFrame(frameIndex)
             end
         end
         self.displayFrames = newDisplayFrames;
+    end
+
+    if (self.RefreshDisplay) then
+        self:RefreshDisplay();
     end
 
     return true;

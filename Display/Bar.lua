@@ -155,8 +155,7 @@ function ST._RenderBarFrame(frameIndex)
                 bar.cdBar:SetMinMaxValues(0, 1);
                 bar.cdBar:SetValue(0);
                 bar.barBg:SetVertexColor(cr * 0.6, cg * 0.6, cb * 0.6, 1);
-                bar.cdText:SetText("READY");
-                bar.cdText:SetTextColor(0.2, 1.0, 0.2);
+                bar.cdText:SetText("");
             elseif (entry.state == "active") then
                 local spellData = ST.spellDB[entry.spellID];
                 local totalDur = spellData and spellData.duration or 1;

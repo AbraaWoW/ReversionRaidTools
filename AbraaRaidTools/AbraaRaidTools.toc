@@ -1,0 +1,30 @@
+## Interface: 120000, 120001
+## Title: Abraa Raid Tools
+## Notes: Customizable raid and party spell cooldown tracking with user-defined frames.
+## Author: Abraa
+## Version: 1.0.0
+## SavedVariables: AbraaRaidToolsDB
+## IconTexture: Interface\Icons\ability_evoker_reversion2
+## OptionalDeps: LibSharedMedia-3.0
+## DefaultState: enabled
+
+Core.lua
+Utils\ClassColors.lua
+SpellData.lua
+Trackers\Cooldowns.lua
+Trackers\Defensives.lua
+Trackers\Interrupts.lua
+Frames.lua
+Engine.lua
+Display.lua
+Display\Bar.lua
+Display\Icon.lua
+Note.lua
+Options.lua
+Profiles.lua
+Tools\BattleRez.lua
+Tools\RaidCheck.lua
+Tools\MarksBar.lua
+Tools\CombatTimer.lua
+RaidGroups.lua
+

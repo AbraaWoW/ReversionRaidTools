@@ -74,6 +74,50 @@ local DEFAULTS = {
     raidGroups   = { profiles = {}, currentSlots = {} },
     note         = { text = "", title = "", saved = {} },
 };
+local MAX_SAVED_CUSTOM_FRAMES = 20;
+
+local function TrimText(s)
+    if (type(s) ~= "string") then return ""; end
+    return (s:gsub("^%s+", ""):gsub("%s+$", ""));
+end
+
+local function RepairFrameNames(frames)
+    if (type(frames) ~= "table") then return; end
+
+    local usedAuto = {};
+    local function NextAutoName()
+        local idx = 1;
+        while (usedAuto[idx]) do
+            idx = idx + 1;
+        end
+        usedAuto[idx] = true;
+        return "Frame " .. idx;
+    end
+
+    for i = 1, #frames do
+        local cfg = frames[i];
+        if (type(cfg) == "table") then
+            local name = TrimText(cfg.name);
+            local keepCurrent = (name ~= "");
+            if (keepCurrent) then
+                local n = tonumber(name:match("^Frame%s+(%d+)$"));
+                if (n and n > 0) then
+                    if (usedAuto[n]) then
+                        keepCurrent = false;
+                    else
+                        usedAuto[n] = true;
+                    end
+                end
+            end
+
+            if (not keepCurrent) then
+                cfg.name = NextAutoName();
+            else
+                cfg.name = name;
+            end
+        end
+    end
+end
 
 local FRAME_DEFAULTS = {
     name         = "New Frame",
@@ -126,8 +170,8 @@ local INTERRUPT_FRAME_DEFAULTS = {
 };
 
 local function getDB()
-    if (not _G.ReversionRaidToolsDB) then _G.ReversionRaidToolsDB = {}; end
-    local db = _G.ReversionRaidToolsDB;
+    if (not _G.RRTDB) then _G.RRTDB = {}; end
+    local db = _G.RRTDB;
     for k, v in pairs(DEFAULTS) do
         if (db[k] == nil) then
             if (type(v) == "table") then
@@ -139,6 +183,26 @@ local function getDB()
             end
         end
     end
+
+    -- Safety net: recover from corrupted/duplicated frame lists in saved variables.
+    if (type(db.frames) ~= "table") then
+        db.frames = {};
+    else
+        local sanitized = {};
+        for i = 1, #db.frames do
+            local cfg = db.frames[i];
+            if (type(cfg) == "table") then
+                sanitized[#sanitized + 1] = cfg;
+                if (#sanitized >= MAX_SAVED_CUSTOM_FRAMES) then
+                    break;
+                end
+            end
+        end
+        if (#sanitized ~= #db.frames) then
+            db.frames = sanitized;
+        end
+    end
+    RepairFrameNames(db.frames);
 
     -- Backfill nested tool defaults for existing users (older DBs may miss keys).
     if (type(db.battleRez) == "table") then
@@ -296,8 +360,6 @@ loader:SetScript("OnEvent", function(self, event, addonName)
         ST:PrintWelcome();
     end
 end);
-
-
 
 
 

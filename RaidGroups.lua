@@ -632,11 +632,26 @@ function ST:BuildRaidGroupsSection(parent, yOff, FONT, PADDING, ROW_HEIGHT,
         delBtn:SetSize(18, 18);
         delBtn:SetPoint("LEFT", loadBtn, "RIGHT", 4, 0);
         SkinButton(delBtn, { 0.4, 0.1, 0.1, 1 }, { 0.6, 0.15, 0.15, 1 });
-        local delTxt = delBtn:CreateFontString(nil, "OVERLAY");
-        delTxt:SetFont(FONT, 12, "OUTLINE");
-        delTxt:SetPoint("CENTER", 0, 1);
-        delTxt:SetText("x");
-        delTxt:SetTextColor(1, 0.4, 0.4);
+        local delLineA = delBtn:CreateTexture(nil, "OVERLAY");
+        delLineA:SetSize(10, 2);
+        delLineA:SetPoint("CENTER", 0, 0);
+        delLineA:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+        delLineA:SetRotation(math.rad(45));
+
+        local delLineB = delBtn:CreateTexture(nil, "OVERLAY");
+        delLineB:SetSize(10, 2);
+        delLineB:SetPoint("CENTER", 0, 0);
+        delLineB:SetTexture("Interface\\BUTTONS\\WHITE8X8");
+        delLineB:SetRotation(math.rad(-45));
+
+        local function SetDeleteIconColor(r, g, b, a)
+            delLineA:SetVertexColor(r, g, b, a or 1);
+            delLineB:SetVertexColor(r, g, b, a or 1);
+        end
+
+        SetDeleteIconColor(1, 0.85, 0.85, 1);
+        delBtn:HookScript("OnEnter", function() SetDeleteIconColor(1, 1, 1, 1); end);
+        delBtn:HookScript("OnLeave", function() SetDeleteIconColor(1, 0.85, 0.85, 1); end);
         rowFrame.delBtn = delBtn;
 
         profRowFrames[i] = rowFrame;

@@ -1,13 +1,17 @@
 {
   "permissions": {
     "allow": [
+      "Read(./**)",
       "Bash(ls:*)",
       "Bash(echo:*)",
       "Bash(dir:*)",
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(wsl grep:*)",
-      "Bash(wsl -e grep:*)"
+      "Bash(wsl -e grep:*)",
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(wc:*)"
     ]
   }
 }

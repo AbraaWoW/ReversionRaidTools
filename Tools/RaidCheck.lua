@@ -1,6 +1,5 @@
-local ADDON_NAME, NS = ...;
-local ST = NS.SpellTracker;
-if (not ST) then return; end
+local _, RRT = ...
+local ST = RRT
 
 -------------------------------------------------------------------------------
 -- Raid Check (compact)

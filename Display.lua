@@ -356,6 +356,7 @@ function ST:RefreshDisplay()
         local arcPanel = _G["ReversionRaidToolsOptions"];
         if (arcPanel and arcPanel:IsShown()) then panelOpen = true; end
         if (SettingsPanel and SettingsPanel:IsShown()) then panelOpen = true; end
+        if (ST._embeddedPanelOpen) then panelOpen = true; end
         if (not panelOpen) then
             ST:DeactivatePreview();
             return;
@@ -368,6 +369,17 @@ function ST:RefreshDisplay()
     local show = inGroup or ST._previewActive;
     local db = self.db;
     if (not db or not db.frames) then return; end
+
+    -- Remove orphan display frames that no longer exist in saved config.
+    for frameIndex, display in pairs(self.displayFrames) do
+        if (type(frameIndex) == "number" and not db.frames[frameIndex]) then
+            if (display and display.frame) then
+                display.frame:Hide();
+                display.frame:SetParent(nil);
+            end
+            self.displayFrames[frameIndex] = nil;
+        end
+    end
 
     local function CanShowFrame(frameConfig)
         if (frameConfig.isInterruptFrame) then
