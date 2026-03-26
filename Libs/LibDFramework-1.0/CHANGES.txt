@@ -1,0 +1,8 @@
+Changes since tag v12.0.1.679
+
+commit f0395c1705d59f7d69c73e00c7b0bff270b2070b
+Author: Tercio Jose <terciob19@hotmail.com>
+Date:   Sat Feb 28 12:39:56 2026 -0300
+
+    BuildMenu() widgetTable now supports icons within the option name, values: 'icontexture', 'iconcoords'{l, r, t, b}, 'iconsize'{width, height}, 'iconfilesize'{width, height}
+

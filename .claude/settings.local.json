@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(ls /c/Users/Abraa/Documents/GitHub/NorthernSkyRaidTools/BossTimelines/*.lua)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(ls /c/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/Timeline/BossData/*.lua)",
+      "Bash(ls /c/Users/Abraa/Documents/GitHub/NorthernSkyRaidTools/EncounterAlerts/MidnightS1/*.lua)",
+      "Bash(ls /c/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/EncounterAlerts/MidnightS1/*.lua)",
+      "Bash(xargs grep:*)",
+      "Bash(gh api:*)",
+      "Bash(curl -s \"https://api.github.com/repos/Reloe/NorthernSkyRaidTools/commits/a7e467eead8c5da146f7eeb0d156df7c6146bf6d\" -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''MESSAGE:'''', d[''''commit''''][''''message'''']\\); print\\(''''FILES:''''\\); [print\\(f[''''filename''''], f[''''status'''']\\) for f in d.get\\(''''files'''',[]\\)]\")",
+      "Bash(curl -s -H \"Accept: application/vnd.github.v3.patch\" \"https://api.github.com/repos/Reloe/NorthernSkyRaidTools/commits/a7e467eead8c5da146f7eeb0d156df7c6146bf6d\")",
+      "Bash(curl -s -H \"Accept: application/vnd.github.v3.patch\" \"https://api.github.com/repos/Reloe/NorthernSkyRaidTools/commits/5a8afe7b0b4085d1dbc7bcf52f0400f2f348ae34\")",
+      "Bash(curl -s -H \"Accept: application/vnd.github.v3.patch\" \"https://api.github.com/repos/Reloe/NorthernSkyRaidTools/commits/3d7da61ae80305065230165f25b5decc67141d1d\")",
+      "Bash(curl -s -H \"Accept: application/vnd.github.v3.patch\" \"https://api.github.com/repos/Reloe/NorthernSkyRaidTools/commits/afe52c6a050cc5bda3ad1b365732c9f4328eb40a\")",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(grep -E \"\\\\.lua$\")",
+      "Bash(grep -r \"CreateDefaultAlert\\\\|AddToReminder\" C:/Users/Abraa/Documents/GitHub/ReversionRaidTools --include=*.lua)",
+      "Bash(grep -n DisplaySecretText C:/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/EncounterAlerts -r --include=*.lua)",
+      "Bash(grep -n \"EncounterAlertStop\\\\|DetectPhaseChange\" C:/Users/Abraa/Documents/GitHub/ReversionRaidTools -r --include=*.lua)",
+      "Bash(node:*)",
+      "Bash(grep -rn \"RegisterAddonMessage\" /c/Users/Abraa/Documents/GitHub/MRT/*.lua)",
+      "Bash(grep -rn \"canaccessvalue\\\\|C_Secrets\\\\|ShouldUnitIdentityBeSecret\" /c/Users/Abraa/Documents/GitHub/MRT/*.lua)",
+      "Bash(grep -B5 \"local.*canaccessvalue\\\\|canaccessvalue = \" /c/Users/Abraa/Documents/GitHub/MRT/*.lua)",
+      "Bash(head -20 grep -n \"BuildCallback\\\\|function\\(\\)\" C:/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/QoL/BattleRez/Options.lua)",
+      "Bash(/dev/null ls:*)",
+      "Bash(find C:UsersAbraaDocumentsGitHubReversionRaidTools -type f -name *[Bb]uff*)",
+      "Bash(xargs -0 grep -l \"BuffReminders\\\\|BuffSounds\")",
+      "Bash(find /c/Users/Abraa/Documents/GitHub/ReversionRaidTools -type f -name *Spell* -o -name *spell*)",
+      "Bash(find \"C:\\\\Users\\\\Abraa\\\\Documents\\\\GitHub\\\\NorthernSkyRaidTools\" -name \"*.lua\" -exec grep -l \"timeline\\\\|TimelineReminders\\\\|TL_Reminders\" {})",
+      "Bash(git:*)",
+      "Bash(find C:/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/EncounterAlerts/ -name *.lua)",
+      "Bash(head -30 grep -n \"InCombatLockdown\\\\|sCombat\\\\|combat\" C:/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/PrivateAura/Core.lua)",
+      "Bash(find C:UsersAbraaDocumentsGitHubReversionRaidTools -type d -name *QoL* -o -type d -name *qol*)",
+      "Bash(find C:/Users/Abraa/Downloads/atrocityUI -name *.lua -path *Framework*)",
+      "WebFetch(domain:api.github.com)"
+    ]
+  }
+}

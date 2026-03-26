@@ -1,0 +1,132 @@
+## Interface: 120000, 120001
+## Title: |cFFBB66FFReversion Raid Tools|r
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\ReversionRaidTools\Media\logo.png
+## Author: Abraa
+## DefaultState: Enable
+## SavedVariables: RRT
+## Category: Reversion
+
+# Libraries
+Libs\libs.xml
+
+# Core - Infrastructure
+Core\ReversionRaidTools.lua
+Core\Locale.lua
+Core\Functions.lua
+Core\Media.lua
+Core\Comms.lua
+Core\EventHandler.lua
+Core\VersionCheck.lua
+
+# Modules - Reminders
+Modules\Reminders\Reminders.lua
+
+# Modules - Timeline
+Modules\Timeline\BossData\BossTimelines.xml
+Modules\Timeline\Timeline.lua
+
+# Modules - Encounter Alerts
+Modules\EncounterAlerts\MidnightS1\ImperatorAverzian.lua
+Modules\EncounterAlerts\MidnightS1\Vorasius.lua
+Modules\EncounterAlerts\MidnightS1\FallenKingSalhadaar.lua
+Modules\EncounterAlerts\MidnightS1\VaelgorEzzorak.lua
+Modules\EncounterAlerts\MidnightS1\LightblindedVanguard.lua
+Modules\EncounterAlerts\MidnightS1\CrownOfThecosmos.lua
+Modules\EncounterAlerts\MidnightS1\Chimaerus.lua
+Modules\EncounterAlerts\MidnightS1\Beloren.lua
+Modules\EncounterAlerts\MidnightS1\MidnightFalls.lua
+Modules\EncounterAlerts\MidnightS1\MotherlodeDebug.lua
+Modules\EncounterAlerts\ManaforgeOmega\NexusKing.lua
+Modules\EncounterAlerts\ManaforgeOmega\Dimensius.lua
+Modules\EncounterAlerts\CustomAlerts.lua
+
+# Modules - CDNote
+Modules\CDNote\CDNote.lua
+Modules\CDNote\MRTMemo.lua
+
+# Modules - Nicknames
+Modules\Nicknames\Nicknames.lua
+
+# Modules - Other
+Modules\SetupManager\SetupManager.lua
+Modules\CooldownCheck\CooldownCheck.lua
+Modules\RaidFrame\RaidFrame.lua
+Modules\RaidFrame\Comm.lua
+Modules\ReadyCheck\ReadyCheck.lua
+Modules\PrivateAura\PrivateAura.lua
+Modules\QoL\QoL.lua
+Modules\QoL\MouseRing\MouseRing.lua
+Modules\QoL\MouseRing\Trail.lua
+Modules\QoL\Crosshair\Crosshair.lua
+Modules\QoL\Dragonriding\Dragonriding.lua
+Modules\QoL\Durability\Durability.lua
+Modules\QoL\CombatTime\CombatTimer.lua
+Modules\QoL\CombatAlert\CombatAlert.lua
+Modules\QoL\CombatLogger\CombatLogger.lua
+Modules\QoL\BattleRez\BattleRez.lua
+Modules\QoL\PetTracker\PetTracker.lua
+Modules\QoL\DontRelease\DontRelease.lua
+Modules\QoL\TalentReminder\TalentReminder.lua
+Modules\QoL\Tooltip\Tooltip.lua
+Modules\QoL\Questing\Questing.lua
+Modules\QoL\EquipmentReminder\EquipmentReminder.lua
+Modules\QoL\AutoKeystone\AutoKeystone.lua
+Modules\QoL\AutoQueue\AutoQueue.lua
+Modules\QoL\AutoPlaystyle\AutoPlaystyle.lua
+
+# UI - Core (must load first)
+UI\Core.lua
+
+# UI - Module Panels
+UI\VersionCheck.lua
+Modules\RaidInspect\RaidInspect.lua
+Modules\RaidGroups\RaidGroups.lua
+Modules\Raid\UI.lua
+Modules\CDNote\NotePanel.lua
+Modules\Reminders\UI.lua
+Modules\CooldownCheck\UI.lua
+Modules\PrivateAura\UI.lua
+Modules\Timeline\UI.lua
+UI\General.lua
+Modules\QoL\UI.lua
+Modules\RaidFrame\UI.lua
+Modules\Assignments\UI.lua
+Modules\EncounterAlerts\UI.lua
+Modules\Note\CreateNote.lua
+Modules\Note\SaveNote.lua
+Modules\Note\UI.lua
+Modules\Nicknames\UI.lua
+
+# UI - Module Options
+UI\Options\General.lua
+Modules\SetupManager\Options.lua
+Modules\Reminders\Options.lua
+UI\Options\Assignments.lua
+Modules\EncounterAlerts\Options.lua
+Modules\ReadyCheck\Options.lua
+Modules\PrivateAura\Options.lua
+Modules\QoL\Options.lua
+Modules\QoL\MouseRing\Options.lua
+Modules\QoL\Crosshair\Options.lua
+Modules\QoL\Dragonriding\Options.lua
+Modules\QoL\Durability\Options.lua
+Modules\QoL\CombatTime\Options.lua
+Modules\QoL\CombatAlert\Options.lua
+Modules\QoL\CombatLogger\Options.lua
+Modules\QoL\BattleRez\Options.lua
+Modules\QoL\PetTracker\Options.lua
+Modules\QoL\DontRelease\Options.lua
+Modules\QoL\TalentReminder\Options.lua
+Modules\QoL\EquipmentReminder\Options.lua
+Modules\QoL\Tooltip\Options.lua
+Modules\QoL\Questing\Options.lua
+Modules\QoL\AutoKeystone\Options.lua
+Modules\QoL\AutoQueue\Options.lua
+Modules\QoL\AutoPlaystyle\Options.lua
+Modules\RaidFrame\Options.lua
+UI\Options\Nicknames.lua
+
+# UI - Entry Point
+UI\RRTUI.lua
+Core\SlashCommands.lua

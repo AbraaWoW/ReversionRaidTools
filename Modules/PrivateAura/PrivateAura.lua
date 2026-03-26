@@ -1,0 +1,958 @@
+local _, RRT_NS = ... -- Internal namespace
+
+local SoundListRaid = {
+    -- [spellID] = "SoundName", use false to remove a sound
+
+    -- Midnight S1
+    [1284527] = "Targeted", -- Galvanize
+    [1283236] = "DropPool", --Void Expulsion
+    [1283069] = "Fixate", -- Weakened
+    [1281184] = "Spread", -- Criticality
+    [1280023] = "Targeted", -- Void Marked
+    --[1279512] = "idk", -- Shatterglass - maybe adding this later
+    [1249609] = "Rune", -- Dark Rune
+    [1268992] = "Targeted", -- Shattering Twilight
+    [1253024] = "Targeted", -- Shattering Twilight (Tank)
+    [1270497] = "Spread", -- Shadowmark
+    [1264756] = "Targeted", -- Rift Madness
+    [1260027] = "Targeted", -- Grasp of Emptiness
+    [1232470] = "Obelisk", -- Grasp of Emptiness (idk which one is correct)
+    [1260203] = "Soak", -- Umbral Collapse
+    [1249265] = "Soak", -- Umbral Collapse (one of them is 2nd cast I think?)
+    [1259861] = "Targeted", -- Ranger Captain's Mark
+    [1237623] = "Targeted", -- Ranger Captain's Mark(idk which one is correct)
+ --   [1262983] = "Light", -- Twilight Seal (Light) - maybe adding this later, not sure if this is used at all
+ --   [1262972] = "Void", -- Twilight Seal (Void) - maybe adding this later, not sure if this is used at all
+    [1257087] = "Clear", -- Consuming Miasma
+    [1255612] = "Targeted", -- Dread Breath
+    [1248697] = "Debuff", -- Despotic Command
+    [1248994] = "Targeted", -- Execution Sentence
+    [1248985] = "Targeted", -- Execution Sentence (not sure if this one is used)
+    [1246487] = "Spread", -- Avenger's Shield
+    [1248721] = "HealAbsorb", -- Tyr's Wrath
+    [1242091] = "Targeted", -- Void Quill
+    [1241992] = "Targeted", -- Light Quill
+    [1241339] = "Void", -- Void Dive
+    [1241292] = "Light", -- Light Dive
+    [1239111] = "Break", -- Aspect of the End
+    [1233602] = "Targeted", -- Silverstrike Arrow
+    [1233887] = "Debuff", -- Null Corona
+    [1254113] = "Fixate", -- Vorasius Fixate
+}
+
+local SoundListMPlus = {
+    -- Magister's Terrace
+    [1225792] = "Debuff", -- Runic Mark
+    [1223958] = "Debuff", -- Cosmic Sting
+    [1215897] = "Targeted", -- Devouring Entropy
+    [1253709] = "Linked", -- Neural Link
+    [1224299] = "Targeted", -- Astral Grasp
+    -- Maisara Caverns
+    [1260643] = "Targeted", -- Barrage
+    [1249478] = "Charge", -- Carrion Swoop
+    [1251775] = "Fixate", -- Final Pursuit
+    [1252675] = "Targeted", -- Crush Souls
+    -- Nexus Point
+    [1251785] = "Targeted", -- Reflux Charge
+    [1282678] = "Fixate", -- Flailstorm
+    -- Windrunner's Spire
+    [466559] = "Targeted", -- Flaming Updraft
+    [474129] = "Spread", -- Splattering Spew
+    [472793] = "Targeted", -- Heaving Yank
+    [1253054] = "Stack", -- Intimidating Shout
+    [1283247] = "Targeted", -- Reckless Leap
+    [1282911] = "Targeted", -- Bolt Gale
+    [470966] = "Fixate", -- Bladestorm
+    [1253834] = "Fixate", -- Curse of Darkness
+    [1253979] = "Clear", -- Gust Shot
+    -- Nothing in Academy
+    -- Pit of Saron
+    [1261286] = "Targeted", -- Throw Saronite
+    [1264453] = "Fixate", -- Lumbering Fixation
+    [1262772] = "Targeted", -- Rime Blast
+    -- Seat of the Triumvirate
+    [1265426] = "Targeted", -- Discordant Beam
+    [1280064] = "Phase Dash", -- Targeted
+    -- Skyreach
+    [1252733] = "Targeted", -- Gale Surge
+    [1253511] = "Fixate", -- Burning Pursuit
+    [153954] = "Targeted", -- Cast Down
+    [1253531] = "Beam", -- Lens Flare
+    [1253541] = "Debuff", -- Scorching Ray
+    [1249020] = "Spread", -- Eclipsing Step
+    -- Den of Nalorakk
+    [1242869] = "Spread", -- Echoing Maul
+    -- Murder Row
+    [1214352] = "Spread", -- Fire Bomb
+    [474545] = "Targeted", -- Murder in a Row
+    -- Blinding Vale
+    [1237091] = "Fixate", -- Bloodthirsty Gaze
+    [1261276] = "Targeted", -- Thornblade
+    [1240222] = "Targeted", -- Pulverizing Strikes
+    -- Nexus Point
+    [1283506] = "Fixate", -- Fixate
+    [1225011] = "Debuff", -- Ethereal Shards
+    [1222098] = "Targeted", -- Nether Dash
+}
+
+-- ── Buff Sounds — plays a sound when a regular (non-PA) buff/debuff appears ──
+local _buffSoundFrame   = nil
+local _buffSoundHandles = {}  -- [spellID] = stopHandle
+local _buffSoundActive  = {}  -- [spellID] = true when currently active
+
+local function HasAura(unit, spellID)
+    for _, filter in ipairs({"HELPFUL", "HARMFUL"}) do
+        local i = 1
+        while true do
+            local aura = C_UnitAuras.GetAuraDataByIndex(unit, i, filter)
+            if not aura then break end
+            if aura.spellId == spellID then return true end
+            i = i + 1
+        end
+    end
+    return false
+end
+
+function RRT_NS:EnableBuffSounds()
+    if _buffSoundFrame then return end
+    _buffSoundFrame = CreateFrame("Frame")
+    _buffSoundFrame:RegisterUnitEvent("UNIT_AURA", "player")
+    _buffSoundFrame:SetScript("OnEvent", function(_, _, unit)
+        if unit ~= "player" then return end
+        for spellID, soundName in pairs(RRT.BuffSounds or {}) do
+            local sid = tonumber(spellID)
+            if sid and soundName then
+                local isActive = HasAura("player", sid)
+                if isActive and not _buffSoundActive[sid] then
+                    _buffSoundActive[sid] = true
+                    local soundPath = RRT_NS.LSM:Fetch("sound", soundName)
+                    if soundPath and soundPath ~= 1 then
+                        local _, handle = PlaySoundFile(soundPath, "Master")
+                        _buffSoundHandles[sid] = handle
+                    end
+                elseif not isActive and _buffSoundActive[sid] then
+                    _buffSoundActive[sid] = nil
+                    if _buffSoundHandles[sid] then
+                        StopSound(_buffSoundHandles[sid])
+                        _buffSoundHandles[sid] = nil
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function RRT_NS:DisableBuffSounds()
+    if _buffSoundFrame then
+        _buffSoundFrame:UnregisterAllEvents()
+        _buffSoundFrame = nil
+    end
+    for _, handle in pairs(_buffSoundHandles) do
+        if handle then StopSound(handle) end
+    end
+    wipe(_buffSoundHandles)
+    wipe(_buffSoundActive)
+end
+
+function RRT_NS:SaveBuffSound(spellID, soundName)
+    if not spellID then return end
+    RRT.BuffSounds[spellID] = soundName
+end
+
+function RRT_NS:DeleteBuffSound(spellID)
+    if not spellID then return end
+    RRT.BuffSounds[spellID] = nil
+    if _buffSoundHandles[spellID] then
+        StopSound(_buffSoundHandles[spellID])
+        _buffSoundHandles[spellID] = nil
+    end
+    _buffSoundActive[spellID] = nil
+end
+
+-- ── Debuff Sounds — plays a sound when a debuff appears on the player ──
+local _debuffSoundFrame   = nil
+local _debuffSoundHandles = {}  -- [spellID] = stopHandle
+local _debuffSoundActive  = {}  -- [spellID] = true when currently active
+
+local function HasDebuff(unit, spellID)
+    -- For the local player, use the unrestricted API (no secret-value restriction)
+    if unit == "player" and C_UnitAuras.GetPlayerAuraBySpellID then
+        local ok, aura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, spellID)
+        if ok then return aura ~= nil end
+    end
+    -- Fallback: iterate auras, wrap comparison in pcall to handle secret values
+    local i = 1
+    while true do
+        local aura = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
+        if not aura then break end
+        local ok, match = pcall(function() return aura.spellId == spellID end)
+        if ok and match then return true end
+        i = i + 1
+        if i > 40 then break end
+    end
+    return false
+end
+
+function RRT_NS:EnableDebuffSounds()
+    if _debuffSoundFrame then return end
+    _debuffSoundFrame = CreateFrame("Frame")
+    _debuffSoundFrame:RegisterUnitEvent("UNIT_AURA", "player")
+    _debuffSoundFrame:SetScript("OnEvent", function(_, _, unit)
+        if unit ~= "player" then return end
+        for spellID, soundName in pairs(RRT.DebuffSounds or {}) do
+            local sid = tonumber(spellID)
+            if sid and soundName then
+                local isActive = HasDebuff("player", sid)
+                if isActive and not _debuffSoundActive[sid] then
+                    _debuffSoundActive[sid] = true
+                    local soundPath = RRT_NS.LSM:Fetch("sound", soundName)
+                    if soundPath and soundPath ~= 1 then
+                        local _, handle = PlaySoundFile(soundPath, "Master")
+                        _debuffSoundHandles[sid] = handle
+                    end
+                elseif not isActive and _debuffSoundActive[sid] then
+                    _debuffSoundActive[sid] = nil
+                    if _debuffSoundHandles[sid] then
+                        StopSound(_debuffSoundHandles[sid])
+                        _debuffSoundHandles[sid] = nil
+                    end
+                end
+            end
+        end
+    end)
+end
+
+function RRT_NS:DisableDebuffSounds()
+    if _debuffSoundFrame then
+        _debuffSoundFrame:UnregisterAllEvents()
+        _debuffSoundFrame = nil
+    end
+    for _, handle in pairs(_debuffSoundHandles) do
+        if handle then StopSound(handle) end
+    end
+    wipe(_debuffSoundHandles)
+    wipe(_debuffSoundActive)
+end
+
+function RRT_NS:SaveDebuffSound(spellID, soundName)
+    if not spellID then return end
+    RRT.DebuffSounds[spellID] = soundName
+end
+
+function RRT_NS:DeleteDebuffSound(spellID)
+    if not spellID then return end
+    RRT.DebuffSounds[spellID] = nil
+    if _debuffSoundHandles[spellID] then
+        StopSound(_debuffSoundHandles[spellID])
+        _debuffSoundHandles[spellID] = nil
+    end
+    _debuffSoundActive[spellID] = nil
+end
+
+function RRT_NS:AddPASound(spellID, sound, unit)
+    if self:Restricted() then return end
+    if (not spellID) or (not C_UnitAuras.AuraIsPrivate(spellID)) then return end
+    if not unit then unit = "player" end
+    if not self.PrivateAuraSoundIDs then self.PrivateAuraSoundIDs = {} end
+    if not self.PrivateAuraSoundIDs[unit] then self.PrivateAuraSoundIDs[unit] = {} end
+    if self.PrivateAuraSoundIDs[unit][spellID] then
+        C_UnitAuras.RemovePrivateAuraAppliedSound(self.PrivateAuraSoundIDs[unit][spellID])
+        self.PrivateAuraSoundIDs[unit][spellID] = nil
+    end
+    if not sound then return end -- essentially calling the function without a soundpath removes the sound (when user removes it in the UI)
+    local soundPath = RRT_NS.LSM:Fetch("sound", sound)
+    if soundPath and soundPath ~= 1 then
+        local soundID = C_UnitAuras.AddPrivateAuraAppliedSound({
+            unitToken = unit,
+            spellID = spellID,
+            soundFileName = soundPath,
+            outputChannel = "master",
+        })
+        self.PrivateAuraSoundIDs[unit][spellID] = soundID
+    end
+end
+
+function RRT_NS:ApplyDefaultPASounds(changed, mplus) -- only apply sound if changed == true, this happens when user changes the settings but not on login so we don't apply the sounds twice.
+    local list = mplus and SoundListMPlus or SoundListRaid
+    for spellID, sound in pairs(list) do
+        local curSound = RRT.PASounds[spellID]
+        if (not curSound) or (not curSound.edited) then -- only add default sound if user hasn't edited it prior
+            if sound == "empty" then -- if sound is "empty" in the table I have marked it to be removed to clean up the table from old content
+                RRT.PASounds[spellID] = nil
+                if changed then self:AddPASound(spellID, nil) end
+            elseif C_UnitAuras.AuraIsPrivate(spellID) then
+                sound = "|cFF4BAAC8"..sound.."|r"
+                RRT.PASounds[spellID] = {sound = sound, edited = false}
+                if changed then self:AddPASound(spellID, sound) end
+            end
+        end
+    end
+end
+
+function RRT_NS:SavePASound(spellID, sound)
+    if (not spellID) then return end
+    RRT.PASounds[spellID] = {sound = sound, edited = true}
+    self:AddPASound(spellID, sound)
+    if not (C_UnitAuras.AuraIsPrivate(spellID)) then
+        RRT.PASounds[spellID] = nil
+    end
+end
+
+function RRT_NS:InitTextPA()
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not self.PATextMoverFrame then
+        self.PATextMoverFrame = CreateFrame("Frame", nil, self.RRTFrame)
+        self.PATextMoverFrame:SetPoint(RRT.PATextSettings.Anchor, self.RRTFrame, RRT.PATextSettings.relativeTo, RRT.PATextSettings.xOffset, RRT.PATextSettings.yOffset)
+
+        self.PATextMoverFrame.Text = self.PATextMoverFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        self.PATextMoverFrame.Text:SetFont(self.LSM:Fetch("font", RRT.Settings.GlobalFont), RRT.PATextSettings.Scale*20, "OUTLINE")
+        self.PATextMoverFrame.Text:SetText("<secret value> targets you with the spell <secret value>")
+        self.PATextMoverFrame:SetSize(self.PATextMoverFrame.Text:GetStringWidth()*1, self.PATextMoverFrame.Text:GetStringHeight()*1.5)
+        self.PATextMoverFrame.Text:SetPoint("CENTER", self.PATextMoverFrame, "CENTER", 0, 0)
+
+        if not self.PATextMoverFrame.Border then
+            self.PATextMoverFrame.Border = CreateFrame("Frame", nil, self.PATextMoverFrame, "BackdropTemplate")
+            self.PATextMoverFrame.Border:SetPoint("TOPLEFT", self.PATextMoverFrame, "TOPLEFT", -6, 6)
+            self.PATextMoverFrame.Border:SetPoint("BOTTOMRIGHT", self.PATextMoverFrame, "BOTTOMRIGHT", 6, -6)
+            self.PATextMoverFrame.Border:SetBackdrop({
+                    edgeFile = "Interface\\Buttons\\WHITE8x8",
+                    edgeSize = 2,
+                })
+            self.PATextMoverFrame.Border:SetBackdropBorderColor(1, 1, 1, 1)
+        end
+        self:ToggleMoveFrames(self.PATextMoverFrame, true)
+        self.PATextMoverFrame.Border:Hide()
+        self.PATextMoverFrame:Hide()
+        self.PATextMoverFrame:SetScript("OnDragStart", function(self)
+            self:StartMoving()
+        end)
+        self.PATextMoverFrame:SetScript("OnDragStop", function(Frame)
+            self:StopFrameMove(Frame, RRT.PATextSettings)
+        end)
+    end
+    if RRT.PATextSettings.enabled then
+        if not self.PATextWarning then
+            self.PATextWarning = CreateFrame("Frame", nil, self.RRTFrame)
+        end
+
+        local height = self.PATextMoverFrame:GetHeight()
+        -- I have absolutely no clue why this math works out but it does
+        self.PATextWarning:SetPoint("TOPLEFT", self.PATextMoverFrame, "TOPLEFT", 0, -0.8*height/RRT.PATextSettings.Scale)
+        self.PATextWarning:SetPoint("BOTTOMRIGHT", self.PATextMoverFrame, "BOTTOMRIGHT", 0, -0.8*height/RRT.PATextSettings.Scale)
+        self.PATextWarning:SetScale(RRT.PATextSettings.Scale)
+
+        local textanchor =
+        {
+            point = "CENTER",
+            relativeTo = self.PATextWarning,
+            relativePoint = "CENTER",
+            offsetX = 0,
+            offsetY = 0
+        }
+        C_UnitAuras.SetPrivateWarningTextAnchor(self.PATextWarning, textanchor)
+    end
+end
+
+function RRT_NS:InitPA()
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+
+    if not self.PAFrames then self.PAFrames = {} end
+    if not self.PADurFrames then self.PADurFrames = {} end
+    if not self.PAAnchorFrames then self.PAAnchorFrames = {} end
+
+    if not self.AddedPA then self.AddedPA = {} end
+    if not self.AddedDurPA then self.AddedDurPA = {} end
+    local xDirection = (RRT.PASettings.GrowDirection == "RIGHT" and 1) or (RRT.PASettings.GrowDirection == "LEFT" and -1) or 0
+    local yDirection = (RRT.PASettings.GrowDirection == "DOWN" and -1) or (RRT.PASettings.GrowDirection == "UP" and 1) or 0
+    local borderSize = RRT.PASettings.HideBorder and -100 or RRT.PASettings.Width/16
+    local scale = RRT.PASettings.StackScale or 4
+    for auraIndex=1, 10 do
+        local anchorID = "RRT_PA"..auraIndex
+        if self.AddedPA[anchorID] then
+            C_UnitAuras.RemovePrivateAuraAnchor(self.AddedPA[anchorID])
+            self.AddedPA[anchorID] = nil
+        end
+        if self.AddedDurPA[anchorID] then
+            C_UnitAuras.RemovePrivateAuraAnchor(self.AddedDurPA[anchorID])
+            self.AddedDurPA[anchorID] = nil
+        end
+        if RRT.PASettings.enabled and RRT.PASettings.Limit >= auraIndex or auraIndex == 1 then
+            if not self.PAFrames[auraIndex] then
+                self.PAFrames[auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+                self.PAFrames[auraIndex]:SetFrameStrata("HIGH")
+            end
+            if not self.PADurFrames[auraIndex] then
+                self.PADurFrames[auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+                self.PADurFrames[auraIndex]:SetSize(0.001, 0.001)
+                self.PADurFrames[auraIndex]:SetFrameStrata("DIALOG")
+                self.PADurFrames[auraIndex]:SetPoint("CENTER", self.PAFrames[auraIndex], "CENTER", 0, 0)
+            end
+            if not self.PAAnchorFrames[auraIndex] then
+                self.PAAnchorFrames[auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+            end
+            if RRT.PASettings.HideTooltip then
+                self.PAFrames[auraIndex]:SetSize(0.001, 0.001)
+            else
+                self.PAFrames[auraIndex]:SetSize(RRT.PASettings.Width, RRT.PASettings.Height)
+            end
+            self.PAAnchorFrames[auraIndex]:SetSize(RRT.PASettings.Width, RRT.PASettings.Height)
+            self.PADurFrames[auraIndex]:SetScale(scale)
+            if RRT.PASettings.AlternateDisplay then self.PAFrames[auraIndex]:SetScale(scale) end
+            self.PAFrames[auraIndex]:ClearAllPoints()
+            self.PAAnchorFrames[auraIndex]:ClearAllPoints()
+            local xPoint = RRT.PASettings.xOffset+(auraIndex-1) * (RRT.PASettings.Width+RRT.PASettings.Spacing) * xDirection
+            local yPoint = RRT.PASettings.yOffset+(auraIndex-1) * (RRT.PASettings.Height+RRT.PASettings.Spacing) * yDirection
+            self.PAAnchorFrames[auraIndex]:SetPoint(RRT.PASettings.Anchor, self.RRTFrame, RRT.PASettings.relativeTo,
+            RRT.PASettings.AlternateDisplay and xPoint/scale or xPoint,
+            RRT.PASettings.AlternateDisplay and yPoint/scale or yPoint)
+            self.PAFrames[auraIndex]:SetPoint(RRT.PASettings.Anchor, self.RRTFrame, RRT.PASettings.relativeTo,
+            RRT.PASettings.AlternateDisplay and xPoint/scale or xPoint,
+            RRT.PASettings.AlternateDisplay and yPoint/scale or yPoint)
+            if not RRT.PASettings.enabled then return end
+            local frame = self.PAFrames[auraIndex]
+            local privateAnchorArgs = {
+                unitToken = "player",
+                auraIndex = auraIndex,
+                parent = frame,
+                showCountdownFrame = true,
+                showCountdownNumbers = not RRT.PASettings.UpscaleDuration,
+                iconInfo = {
+                    iconAnchor = {
+                        point = "CENTER",
+                        relativeTo = frame,
+                        relativePoint = "CENTER",
+                        offsetX = 0,
+                        offsetY = 0,
+                    },
+                    borderScale = borderSize,
+                    iconWidth = RRT.PASettings.AlternateDisplay and RRT.PASettings.Width/scale or RRT.PASettings.Width,
+                    iconHeight = RRT.PASettings.AlternateDisplay and RRT.PASettings.Height/scale or RRT.PASettings.Height,
+                },
+            }
+            self.AddedPA[anchorID] = C_UnitAuras.AddPrivateAuraAnchor(privateAnchorArgs)
+            if scale ~= 1 and not RRT.PASettings.AlternateDisplay then
+                local durationArgs = {
+                    unitToken = "player",
+                    auraIndex = auraIndex,
+                    parent = self.PADurFrames[auraIndex],
+                    showCountdownFrame = false,
+                    showCountdownNumbers = false,
+                    iconInfo = {
+                        iconAnchor = {
+                            point = "BOTTOMRIGHT",
+                            relativeTo = self.PAAnchorFrames[auraIndex],
+                            relativePoint = "BOTTOMRIGHT",
+                            offsetX = 2,
+                            offsetY = -4,
+                        },
+                        borderScale = -100,
+                        iconWidth = 0.001,
+                        iconHeight = 0.001,
+                    },
+                }
+                if RRT.PASettings.UpscaleDuration then
+                    durationArgs.durationAnchor = {
+                        point = "CENTER",
+                        relativeTo = self.PAFrames[auraIndex],
+                        relativePoint = "CENTER",
+                        offsetX = 0,
+                        offsetY = 0,
+                    }
+                end
+                self.AddedDurPA[anchorID] = C_UnitAuras.AddPrivateAuraAnchor(durationArgs)
+            end
+        end
+    end
+end
+
+function RRT_NS:InitRaidPA(party, firstcall) -- still run this function if disabled to clean up old anchors
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not self.PARaidFrames then self.PARaidFrames = {} end
+    if not self.PAStackFrames then self.PAStackFrames = {} end
+    if not self.PARaidAnchorFrames then self.PARaidAnchorFrames = {} end
+    if not self.AddedPARaid then self.AddedPARaid = {} end
+    if not self.AddedPAStackRaid then self.AddedPAStackRaid = {} end
+    local borderSize = RRT.PARaidSettings.HideBorder and -100 or RRT.PARaidSettings.Width/16
+    local scale = RRT.PARaidSettings.StackScale or 1
+    for i=1, party and 5 or 40 do
+        local anchorID = party and "RRT_PAParty"..i or "RRT_PARaid"..i
+        if self.AddedPARaid and self.AddedPARaid[anchorID] then
+            for auraIndex = 1, 10 do
+                if self.AddedPARaid[anchorID][auraIndex] then
+                    C_UnitAuras.RemovePrivateAuraAnchor(self.AddedPARaid[anchorID][auraIndex])
+                    self.AddedPARaid[anchorID][auraIndex] = nil
+                end
+            end
+        end
+        if self.AddedPAStackRaid and self.AddedPAStackRaid[anchorID] then
+            for auraIndex = 1, 10 do
+                if self.AddedPAStackRaid[anchorID] and self.AddedPAStackRaid[anchorID][auraIndex] then
+                    C_UnitAuras.RemovePrivateAuraAnchor(self.AddedPAStackRaid[anchorID][auraIndex])
+                    self.AddedPAStackRaid[anchorID][auraIndex] = nil
+                end
+            end
+        end
+        local u = party and "party"..i or "raid"..i
+        if party and i == 5 then u = "player" end
+        if RRT.PARaidSettings.enabled and UnitExists(u) then
+            local F = self.LGF.GetUnitFrame(u)
+            if firstcall and not F then
+                if self.InitRaidPATimer then self.InitRaidPATimer:Cancel() end
+                self.InitRaidPATimer = C_Timer.After(5, function() self.InitRaidPATimer = nil; self:InitRaidPA(party, false) end)
+                return
+            end
+            if F then
+                if not self.PARaidFrames[i] then
+                    self.PARaidFrames[i] = CreateFrame("Frame", nil, self.RRTFrame)
+                    self.PARaidFrames[i]:SetFrameStrata("HIGH")
+                end
+                if not self.PARaidAnchorFrames[i] then
+                    self.PARaidAnchorFrames[i] = CreateFrame("Frame", nil, self.RRTFrame)
+                end
+                if not self.PAStackFrames[i] then
+                    self.PAStackFrames[i] = CreateFrame("Frame", nil, self.RRTFrame)
+                    self.PAStackFrames[i]:SetSize(0.001, 0.001)
+                    self.PAStackFrames[i]:SetFrameStrata("DIALOG")
+                end
+
+                self.PARaidAnchorFrames[i]:SetSize(RRT.PARaidSettings.Width, RRT.PARaidSettings.Height)
+                self.PAStackFrames[i]:SetScale(scale)
+                self.PARaidFrames[i]:ClearAllPoints()
+                self.PARaidAnchorFrames[i]:ClearAllPoints()
+                self.PARaidAnchorFrames[i]:SetPoint(RRT.PARaidSettings.Anchor, F, RRT.PARaidSettings.relativeTo, RRT.PARaidSettings.xOffset, RRT.PARaidSettings.yOffset)
+                self.PARaidFrames[i]:SetSize(0.001, 0.001)
+                self.PARaidFrames[i]:SetPoint(RRT.PARaidSettings.Anchor, F, RRT.PARaidSettings.relativeTo, RRT.PARaidSettings.xOffset, RRT.PARaidSettings.yOffset)
+                local xDirection = (RRT.PARaidSettings.GrowDirection == "RIGHT" and 1) or (RRT.PARaidSettings.GrowDirection == "LEFT" and -1) or 0
+                local yDirection = (RRT.PARaidSettings.GrowDirection == "DOWN" and -1) or (RRT.PARaidSettings.GrowDirection == "UP" and 1) or 0
+                local xRowDirection = (RRT.PARaidSettings.RowGrowDirection == "RIGHT" and 1) or (RRT.PARaidSettings.RowGrowDirection == "LEFT" and -1) or 0
+                local yRowDirection = (RRT.PARaidSettings.RowGrowDirection == "DOWN" and -1) or (RRT.PARaidSettings.RowGrowDirection == "UP" and 1) or 0
+                self.AddedPARaid[anchorID] = {}
+                self.AddedPAStackRaid[anchorID] = {}
+                for auraIndex = 1, 10 do
+                    if auraIndex > RRT.PARaidSettings.Limit then break end
+                    local row = math.ceil(auraIndex/RRT.PARaidSettings.PerRow)
+                    local column = auraIndex - (row-1)*RRT.PARaidSettings.PerRow
+                    local privateAnchorArgs = {
+                        unitToken = u,
+                        auraIndex = auraIndex,
+                        parent = self.PARaidFrames[i],
+                        showCountdownFrame = true,
+                        showCountdownNumbers = not RRT.PARaidSettings.HideDurationText,
+                        iconInfo = {
+                            iconAnchor = {
+                                point = RRT.PARaidSettings.Anchor,
+                                relativeTo = self.PARaidFrames[i],
+                                relativePoint = RRT.PARaidSettings.relativeTo,
+                                offsetX = (column - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xDirection + (row - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xRowDirection,
+                                offsetY = (column - 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yDirection + (row - 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yRowDirection,
+                            },
+                            borderScale = borderSize,
+                            iconWidth = RRT.PARaidSettings.Width,
+                            iconHeight = RRT.PARaidSettings.Height,
+                        }
+                    }
+                    self.AddedPARaid[anchorID][auraIndex] = C_UnitAuras.AddPrivateAuraAnchor(privateAnchorArgs)
+                    if scale ~= 1 then
+                        local stackArgs = {
+                            unitToken = u,
+                            auraIndex = auraIndex,
+                            parent = self.PAStackFrames[i],
+                            showCountdownFrame = false,
+                            showCountdownNumbers = false,
+                            iconInfo = {
+                                iconAnchor = {
+                                    point = "BOTTOMRIGHT",
+                                    relativeTo = self.PARaidAnchorFrames[i],
+                                    relativePoint = "BOTTOMRIGHT",
+                                    offsetX = 4/scale + ((column - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xDirection)/scale + ((row - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xRowDirection)/scale,
+                                    offsetY = -4/scale + ((column - 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yDirection)/scale + ((row - 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yRowDirection)/scale,
+                                },
+                                borderScale = -100,
+                                iconWidth = 0.001,
+                                iconHeight = 0.001,
+                            },
+                        }
+                        self.AddedPAStackRaid[anchorID][auraIndex] = C_UnitAuras.AddPrivateAuraAnchor(stackArgs)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function RRT_NS:RemoveTankPA()
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not self.AddedTankPA then return end
+    for i, anchortable in ipairs(self.AddedTankPA) do
+        if self.AddedTankPA[i] then
+            for anchorID, anchor in pairs(anchortable) do
+                if self.AddedTankPA[i][anchorID] then
+                    C_UnitAuras.RemovePrivateAuraAnchor(anchor)
+                    self.AddedTankPA[i][anchorID] = nil
+                end
+                if self.AddedTankDurPA[i] and self.AddedTankDurPA[i][anchorID] then
+                    C_UnitAuras.RemovePrivateAuraAnchor(self.AddedTankDurPA[i][anchorID])
+                    self.AddedTankDurPA[i][anchorID] = nil
+                end
+            end
+        end
+    end
+end
+
+function RRT_NS:InitTankPA()
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    -- initiated on ENCOUNTER_START for tank players
+    if not self.PATankFrames then self.PATankFrames = {} end
+    if not self.PATankDurFrames then self.PATankDurFrames = {} end
+    if not self.PATankAnchorFrames then self.PATankAnchorFrames = {} end
+    if not self.AddedTankPA then self.AddedTankPA = {} end
+    if not self.AddedTankDurPA then self.AddedTankDurPA = {} end
+    local xDirection = (RRT.PATankSettings.GrowDirection == "RIGHT" and 1) or (RRT.PATankSettings.GrowDirection == "LEFT" and -1) or 0
+    local yDirection = (RRT.PATankSettings.GrowDirection == "DOWN" and -1) or (RRT.PATankSettings.GrowDirection == "UP" and 1) or 0
+
+    local multiTankx = (RRT.PATankSettings.MultiTankGrowDirection == "RIGHT" and 1) or (RRT.PATankSettings.MultiTankGrowDirection == "LEFT" and -1) or 0
+    local multiTanky = (RRT.PATankSettings.MultiTankGrowDirection == "DOWN" and -1) or (RRT.PATankSettings.MultiTankGrowDirection == "UP" and 1) or 0
+    local units = {}
+    for unit in self:IterateGroupMembers() do
+        if UnitGroupRolesAssigned(unit) == "TANK" and not (UnitIsUnit("player", unit)) then
+            table.insert(units, unit)
+        end
+    end
+    -- remove any previous anchor, also calling this on ENCOUNTER_END
+    self:RemoveTankPA()
+    local borderSize = RRT.PATankSettings.HideBorder and -100 or RRT.PATankSettings.Width/16
+    local scale = RRT.PATankSettings.StackScale or 4
+    for i, unit in ipairs(units) do
+        if not self.PATankFrames[i] then self.PATankFrames[i] = {} end
+        if not self.PATankDurFrames[i] then self.PATankDurFrames[i] = {} end
+        if not self.PATankAnchorFrames[i] then self.PATankAnchorFrames[i] = {} end
+        self.AddedTankPA[i] = self.AddedTankPA[i] or {}
+        self.AddedTankDurPA[i] = self.AddedTankDurPA[i] or {}
+        for auraIndex = 1, 10 do
+            local anchorID = "RRT_TankPA"..auraIndex
+            if self.AddedTankPA[i][anchorID] then
+                C_UnitAuras.RemovePrivateAuraAnchor(self.AddedTankPA[i][anchorID])
+                self.AddedTankPA[i][anchorID] = nil
+            end
+            if self.AddedTankDurPA[i][anchorID] then
+                C_UnitAuras.RemovePrivateAuraAnchor(self.AddedTankDurPA[i][anchorID])
+                self.AddedTankDurPA[i][anchorID] = nil
+            end
+
+            if RRT.PATankSettings.enabled and RRT.PATankSettings.Limit >= auraIndex then
+                if not self.PATankFrames[i][auraIndex] then
+                    self.PATankFrames[i][auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+                    self.PATankFrames[i][auraIndex]:SetFrameStrata("HIGH")
+                end
+                if not self.PATankDurFrames[i][auraIndex] then
+                    self.PATankDurFrames[i][auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+                    self.PATankDurFrames[i][auraIndex]:SetSize(0.001, 0.001)
+                    self.PATankDurFrames[i][auraIndex]:SetFrameStrata("DIALOG")
+                end
+                if not self.PATankAnchorFrames[i][auraIndex] then
+                    self.PATankAnchorFrames[i][auraIndex] = CreateFrame("Frame", nil, self.RRTFrame)
+                    self.PATankAnchorFrames[i][auraIndex]:SetAllPoints(self.PATankFrames[i][auraIndex])
+                end
+                if RRT.PATankSettings.HideTooltip then
+                    self.PATankFrames[i][auraIndex]:SetSize(0.001, 0.001)
+                else
+                    self.PATankFrames[i][auraIndex]:SetSize(RRT.PATankSettings.Width, RRT.PATankSettings.Height)
+                end
+
+                self.PATankAnchorFrames[i][auraIndex]:SetSize(RRT.PATankSettings.Width, RRT.PATankSettings.Height)
+                self.PATankDurFrames[i][auraIndex]:SetScale(scale)
+                if RRT.PATankSettings.AlternateDisplay then self.PATankFrames[i][auraIndex]:SetScale(scale) end
+                self.PATankDurFrames[i][auraIndex]:SetPoint("CENTER", self.PATankFrames[i][auraIndex], "CENTER", 0, 0)
+                self.PATankFrames[i][auraIndex]:ClearAllPoints()
+                self.PATankAnchorFrames[i][auraIndex]:ClearAllPoints()
+                local xPoint = RRT.PATankSettings.xOffset+(auraIndex-1) * (RRT.PATankSettings.Width+RRT.PATankSettings.Spacing) * xDirection + (i-1) * (RRT.PATankSettings.Width+RRT.PATankSettings.Spacing) * multiTankx
+                local yPoint = RRT.PATankSettings.yOffset+(auraIndex-1) * (RRT.PATankSettings.Height+RRT.PATankSettings.Spacing) * yDirection + (i-1) * (RRT.PATankSettings.Height+RRT.PATankSettings.Spacing) * multiTanky
+                self.PATankAnchorFrames[i][auraIndex]:SetPoint(RRT.PATankSettings.Anchor, self.RRTFrame, RRT.PATankSettings.relativeTo,
+                RRT.PATankSettings.AlternateDisplay and xPoint/scale or xPoint,
+                RRT.PATankSettings.AlternateDisplay and yPoint/scale or yPoint)
+                self.PATankFrames[i][auraIndex]:SetPoint(RRT.PATankSettings.Anchor, self.RRTFrame, RRT.PATankSettings.relativeTo,
+                RRT.PATankSettings.AlternateDisplay and xPoint/scale or xPoint,
+                RRT.PATankSettings.AlternateDisplay and yPoint/scale or yPoint)
+
+                local privateAnchorArgs = {
+                    unitToken = unit,
+                    auraIndex = auraIndex,
+                    parent = self.PATankFrames[i][auraIndex],
+                    showCountdownFrame = true,
+                    showCountdownNumbers = not RRT.PATankSettings.UpscaleDuration,
+                    iconInfo = {
+                        iconAnchor = {
+                            point = "CENTER",
+                            relativeTo = self.PATankFrames[i][auraIndex],
+                            relativePoint = "CENTER",
+                            offsetX = 0,
+                            offsetY = 0,
+                        },
+                        borderScale = borderSize,
+                    iconWidth = RRT.PATankSettings.AlternateDisplay and RRT.PATankSettings.Width/scale or RRT.PATankSettings.Width,
+                    iconHeight = RRT.PATankSettings.AlternateDisplay and RRT.PATankSettings.Height/scale or RRT.PATankSettings.Height,
+                    }
+                }
+                self.AddedTankPA[i][anchorID] = C_UnitAuras.AddPrivateAuraAnchor(privateAnchorArgs)
+                if scale ~= 1 and not RRT.PATankSettings.AlternateDisplay then
+                    local durationArgs = {
+                        unitToken = unit,
+                        auraIndex = auraIndex,
+                        parent = self.PATankDurFrames[i][auraIndex],
+                        showCountdownFrame = false,
+                        showCountdownNumbers = false,
+                        iconInfo = {
+                            iconAnchor = {
+                                point = "BOTTOMRIGHT",
+                                relativeTo = self.PATankAnchorFrames[i][auraIndex],
+                                relativePoint = "BOTTOMRIGHT",
+                                offsetX = 2,
+                                offsetY = -4,
+                            },
+                            borderScale = -100,
+                            iconWidth = 0.001,
+                            iconHeight = 0.001,
+                        },
+                    }
+                    if RRT.PATankSettings.UpscaleDurations then
+                        durationArgs.durationAnchor = {
+                            point = "CENTER",
+                            relativeTo = self.PATankFrames[i][auraIndex],
+                            relativePoint = "CENTER",
+                            offsetX = 0,
+                            offsetY = 0,
+                        }
+                    end
+                    self.AddedTankDurPA[i][anchorID] = C_UnitAuras.AddPrivateAuraAnchor(durationArgs)
+                end
+            end
+        end
+    end
+end
+
+function RRT_NS:UpdatePADisplay(Personal, Tank)
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if Personal then
+        if self.IsPAPreview then
+            self:PreviewPA(true)
+        else
+            self:PreviewPA(false)
+            self:InitPA()
+            self:InitTextPA()
+        end
+    elseif Tank then
+        if self.IsTankPAPreview then
+            self:PreviewTankPA(true)
+        else
+            self:PreviewTankPA(false)
+        end
+    else
+        if self.IsRaidPAPreview then
+            self:PreviewRaidPA(true, true)
+        else
+            self:PreviewRaidPA(false)
+            self:InitRaidPA(not UnitInRaid("player"))
+        end
+    end
+end
+
+function RRT_NS:PreviewPA(Show)
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not self.PAFrames then self:InitPA() end
+    if not self.PATextMoverFrame then self:InitTextPA() end
+    if not Show then
+        if self.PAFrames[1].Border then self.PAFrames[1].Border:Hide() end
+        self:ToggleMoveFrames(self.PATextMoverFrame, false)
+        self:ToggleMoveFrames(self.PAFrames[1], false)
+        self.PATextMoverFrame:Hide()
+        self.PAFrames[1]:SetSize(1, 1)
+        self:InitPA()
+        self:InitTextPA()
+        if self.PAPreviewIcons then
+            for _, icon in ipairs(self.PAPreviewIcons) do
+                icon:Hide()
+            end
+        end
+        return
+    end
+    self.PAFrames[1]:SetSize((RRT.PASettings.Width), (RRT.PASettings.Height))
+    self.PAFrames[1]:SetPoint(RRT.PASettings.Anchor, self.RRTFrame, RRT.PASettings.relativeTo, RRT.PASettings.xOffset, RRT.PASettings.yOffset)
+    if not self.PAFrames[1].Border then
+        self.PAFrames[1].Border = CreateFrame("Frame", nil, self.PAFrames[1], "BackdropTemplate")
+        self.PAFrames[1].Border:SetPoint("TOPLEFT", self.PAFrames[1], "TOPLEFT", -6, 6)
+        self.PAFrames[1].Border:SetPoint("BOTTOMRIGHT", self.PAFrames[1], "BOTTOMRIGHT", 6, -6)
+        self.PAFrames[1].Border:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                edgeSize = 2,
+            })
+        self.PAFrames[1].Border:SetBackdropBorderColor(1, 1, 1, 1)
+        self.PAFrames[1].Border:Hide()
+    end
+
+    self:ToggleMoveFrames(self.PATextMoverFrame, true)
+    self:ToggleMoveFrames(self.PAFrames[1], true)
+    self.PATextMoverFrame:Show()
+    self.PATextMoverFrame.Border:Show()
+    self.PATextMoverFrame.Text:Show()
+    self.PATextMoverFrame.Text:SetFont(self.LSM:Fetch("font", RRT.Settings.GlobalFont), RRT.PATextSettings.Scale*20, "OUTLINE")
+    self.PATextMoverFrame:SetSize(self.PATextMoverFrame.Text:GetStringWidth()*1, self.PATextMoverFrame.Text:GetStringHeight()*1.5)
+    self.PAFrames[1].Border:Show()
+    self.PAFrames[1]:SetScript("OnDragStart", function(self)
+        self:StartMoving()
+    end)
+    self.PAFrames[1]:SetScript("OnDragStop", function(Frame)
+        self:StopFrameMove(Frame, RRT.PASettings)
+    end)
+
+    if not self.PAPreviewIcons then
+        self.PAPreviewIcons = {}
+    end
+    for i=1, 10 do
+        if not self.PAPreviewIcons[i] then
+            self.PAPreviewIcons[i] = self.PAFrames[1]:CreateTexture(nil, "ARTWORK")
+            self.PAPreviewIcons[i]:SetTexture(237555)
+        end
+        if RRT.PASettings.Limit >= i then
+            local xOffset = (RRT.PASettings.GrowDirection == "RIGHT" and (i-1)*(RRT.PASettings.Width+RRT.PASettings.Spacing)) or (RRT.PASettings.GrowDirection == "LEFT" and -(i-1)*(RRT.PASettings.Width+RRT.PASettings.Spacing)) or 0
+            local yOffset = (RRT.PASettings.GrowDirection == "UP" and (i-1)*(RRT.PASettings.Height+RRT.PASettings.Spacing)) or (RRT.PASettings.GrowDirection == "DOWN" and -(i-1)*(RRT.PASettings.Height+RRT.PASettings.Spacing)) or 0
+            self.PAPreviewIcons[i]:SetSize(RRT.PASettings.Width, RRT.PASettings.Height)
+            self.PAPreviewIcons[i]:SetPoint("CENTER", self.PAFrames[1], "CENTER", xOffset, yOffset)
+            self.PAPreviewIcons[i]:Show()
+        else
+            self.PAPreviewIcons[i]:Hide()
+        end
+    end
+end
+
+function RRT_NS:PreviewTankPA(Show)
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not self.PATankFrames then self:InitTankPA() end
+    if not self.PATankFrames[1] or not self.PATankFrames[1][1] then
+        self.PATankFrames[1] = self.PATankFrames[1] or {}
+        self.PATankFrames[1][1] = CreateFrame("Frame", nil, self.RRTFrame)
+        self.PATankFrames[1][1]:SetPoint(RRT.PATankSettings.Anchor, self.RRTFrame, RRT.PATankSettings.relativeTo, RRT.PATankSettings.xOffset, RRT.PATankSettings.yOffset)
+    end
+    if not Show then
+        if self.PATankFrames[1][1].Border then self.PATankFrames[1][1].Border:Hide() end
+        self:ToggleMoveFrames(self.PATankFrames[1][1], false)
+        self.PATankFrames[1][1]:SetSize(1, 1)
+        if self.PATankPreviewIcons then
+            for _, icon in ipairs(self.PATankPreviewIcons) do
+                icon:Hide()
+            end
+        end
+        self:RemoveTankPA()
+        if UnitGroupRolesAssigned("player") == "TANK" or RRT.Settings.Debug then
+            self:InitTankPA()
+        end
+        return
+    end
+    self.PATankFrames[1][1]:SetSize((RRT.PATankSettings.Width), (RRT.PATankSettings.Height))
+    self.PATankFrames[1][1]:SetPoint(RRT.PATankSettings.Anchor, self.RRTFrame, RRT.PATankSettings.relativeTo, RRT.PATankSettings.xOffset, RRT.PATankSettings.yOffset)
+    if not self.PATankFrames[1][1].Border then
+        self.PATankFrames[1][1].Border = CreateFrame("Frame", nil, self.PATankFrames[1][1], "BackdropTemplate")
+        self.PATankFrames[1][1].Border:SetPoint("TOPLEFT", self.PATankFrames[1][1], "TOPLEFT", -6, 6)
+        self.PATankFrames[1][1].Border:SetPoint("BOTTOMRIGHT", self.PATankFrames[1][1], "BOTTOMRIGHT", 6, -6)
+        self.PATankFrames[1][1].Border:SetBackdrop({
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                edgeSize = 2,
+            })
+        self.PATankFrames[1][1].Border:SetBackdropBorderColor(1, 1, 1, 1)
+        self.PATankFrames[1][1].Border:Hide()
+    end
+
+    self:ToggleMoveFrames(self.PATankFrames[1][1], true)
+    self.PATankFrames[1][1]:SetScript("OnDragStart", function(self)
+        self:StartMoving()
+    end)
+    self.PATankFrames[1][1]:SetScript("OnDragStop", function(Frame)
+        self:StopFrameMove(Frame, RRT.PATankSettings)
+    end)
+
+    if not self.PATankPreviewIcons then
+        self.PATankPreviewIcons = {}
+    end
+    for i=1, 10 do
+        if not self.PATankPreviewIcons[i] then
+            self.PATankPreviewIcons[i] = self.PATankFrames[1][1]:CreateTexture(nil, "ARTWORK")
+            self.PATankPreviewIcons[i]:SetTexture(236318)
+        end
+        if RRT.PATankSettings.Limit >= i then
+            local xOffset = (RRT.PATankSettings.GrowDirection == "RIGHT" and (i-1)*(RRT.PATankSettings.Width+RRT.PATankSettings.Spacing)) or (RRT.PATankSettings.GrowDirection == "LEFT" and -(i-1)*(RRT.PATankSettings.Width+RRT.PATankSettings.Spacing)) or 0
+            local yOffset = (RRT.PATankSettings.GrowDirection == "UP" and (i-1)*(RRT.PATankSettings.Height+RRT.PATankSettings.Spacing)) or (RRT.PATankSettings.GrowDirection == "DOWN" and -(i-1)*(RRT.PATankSettings.Height+RRT.PATankSettings.Spacing)) or 0
+            self.PATankPreviewIcons[i]:SetSize(RRT.PATankSettings.Width, RRT.PATankSettings.Height)
+            self.PATankPreviewIcons[i]:SetPoint("CENTER", self.PATankFrames[1][1], "CENTER", xOffset, yOffset)
+            self.PATankPreviewIcons[i]:Show()
+        else
+            self.PATankPreviewIcons[i]:Hide()
+        end
+    end
+end
+
+function RRT_NS:PreviewRaidPA(Show, Init)
+    if self:Restricted() then return end
+    if self.IsBuilding then return end
+    if not Show then
+        if self.PARaidPreviewFrame then self.PARaidPreviewFrame:Hide() end
+        return
+    end
+    local MyFrame = self.LGF.GetUnitFrame("player")
+    if not MyFrame then -- try again if no frame was found, as the first querry returns nil
+        if Init then
+            if self.RepeatRaidPAPreview then self.RepeatRaidPAPreview:Cancel() end
+            self.RepeatRaidPAPreview = C_Timer.NewTimer(0.2, function() self:PreviewRaidPA(Show, false) end)
+        else
+            print("Couldn't find a matching raid frame for the player, aborting preview")
+            self.IsRaidPAPreview = false
+        end
+        return
+    end
+    if not self.PARaidPreviewFrame then
+        self.PARaidPreviewFrame = CreateFrame("Frame", nil, self.RRTFrame)
+        self.PARaidPreviewFrame:SetFrameStrata("DIALOG")
+    end
+    self.PARaidPreviewFrame:SetSize(RRT.PARaidSettings.Width, RRT.PARaidSettings.Height)
+    self.PARaidPreviewFrame:SetPoint(RRT.PARaidSettings.Anchor, MyFrame, RRT.PARaidSettings.relativeTo, RRT.PARaidSettings.xOffset, RRT.PARaidSettings.yOffset)
+    self.PARaidPreviewFrame:Show()
+
+    if not self.PARaidPreviewIcons then
+        self.PARaidPreviewIcons = {}
+    end
+
+    local xDirection = (RRT.PARaidSettings.GrowDirection == "RIGHT" and 1) or (RRT.PARaidSettings.GrowDirection == "LEFT" and -1) or 0
+    local yDirection = (RRT.PARaidSettings.GrowDirection == "DOWN" and -1) or (RRT.PARaidSettings.GrowDirection == "UP" and 1) or 0
+    local xRowDirection = (RRT.PARaidSettings.RowGrowDirection == "RIGHT" and 1) or (RRT.PARaidSettings.RowGrowDirection == "LEFT" and -1) or 0
+    local yRowDirection = (RRT.PARaidSettings.RowGrowDirection == "DOWN" and -1) or (RRT.PARaidSettings.RowGrowDirection == "UP" and 1) or 0
+    for i=1, 10 do
+        local row = math.ceil(i/RRT.PARaidSettings.PerRow)
+        local column = i - (row-1)*RRT.PARaidSettings.PerRow
+        if not self.PARaidPreviewIcons[i] then
+            self.PARaidPreviewIcons[i] = self.PARaidPreviewFrame:CreateTexture(nil, "ARTWORK")
+            self.PARaidPreviewIcons[i]:SetTexture(237555)
+            self.PARaidPreviewIcons[i].Text = self.PARaidPreviewFrame:CreateFontString(nil, "OVERLAY")
+            self.PARaidPreviewIcons[i].Text:SetFont(self.LSM:Fetch("font", RRT.Settings.GlobalFont), 16, "OUTLINE")
+            self.PARaidPreviewIcons[i].Text:SetPoint("CENTER", self.PARaidPreviewIcons[i], "CENTER", 0, 0)
+            self.PARaidPreviewIcons[i].Text:SetText(i)
+            self.PARaidPreviewIcons[i].Text:SetTextColor(1, 0, 0, 1)
+        end
+        if RRT.PARaidSettings.Limit >= i then
+            local xOffset = (column - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xDirection + (row - 1) * (RRT.PARaidSettings.Width+RRT.PARaidSettings.Spacing) * xRowDirection
+            local yOffset = (column - 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yDirection + (row- 1) * (RRT.PARaidSettings.Height+RRT.PARaidSettings.Spacing) * yRowDirection
+            self.PARaidPreviewIcons[i]:SetSize(RRT.PARaidSettings.Width, RRT.PARaidSettings.Height)
+            self.PARaidPreviewIcons[i]:SetPoint("CENTER", self.PARaidPreviewFrame, "CENTER", xOffset, yOffset)
+            self.PARaidPreviewIcons[i]:Show()
+            self.PARaidPreviewIcons[i].Text:Show()
+        else
+            self.PARaidPreviewIcons[i]:Hide()
+            self.PARaidPreviewIcons[i].Text:Hide()
+        end
+    end
+end
