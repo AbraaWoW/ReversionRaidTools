@@ -4,14 +4,28 @@ local _, RRT_NS = ...
 -- Defaults
 -- ─────────────────────────────────────────────────────────────────────────────
 local DEFAULTS = {
-    enabled       = false,
-    locked        = true,
-    fontSize      = 18,
-    fontOutline   = "OUTLINE",
-    fontColor     = { r = 1, g = 1, b = 1 },
-    useClassColor = false,
-    stickyDuration = 5,
-    pos           = nil,  -- { point, relPoint, x, y }
+    enabled         = false,
+    locked          = true,
+    timeFormat      = "CLOCK",
+    fontSize        = 18,
+    fontOutline     = "OUTLINE",
+    fontColor       = { r = 1, g = 1, b = 1, a = 1 },
+    fontShadowColor = { r = 0, g = 0, b = 0, a = 1 },
+    fontShadowX     = 1,
+    fontShadowY     = -1,
+    useClassColor   = false,
+    stickyDuration  = 5,
+    pos             = nil,  -- { point, relPoint, x, y }
+}
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Time formats (from ItruliaQoL)
+-- ─────────────────────────────────────────────────────────────────────────────
+local TIME_FORMATS = {
+    SECONDS         = { label = "180",      fn = function(s) return string.format("%d", math.floor(s)) end },
+    SECONDS_BRACKET = { label = "[180]",    fn = function(s) return string.format("[%d]", math.floor(s)) end },
+    CLOCK           = { label = "1:23",     fn = function(s) local m = math.floor(s/60); return string.format("%d:%02d", m, math.floor(s%60)) end },
+    CLOCK_BRACKET   = { label = "[1:23]",   fn = function(s) local m = math.floor(s/60); return string.format("[%d:%02d]", m, math.floor(s%60)) end },
 }
 
 local DEFAULT_POINT = { "TOP", UIParent, "TOP", 0, -200 }
@@ -37,10 +51,10 @@ local function GetTextColor()
     return fc.r, fc.g, fc.b
 end
 
-local function FormatClock(seconds)
-    local m = math.floor(seconds / 60)
-    local s = math.floor(seconds % 60)
-    return string.format("%d:%02d", m, s)
+local function FormatTime(seconds)
+    local fmt = Get("timeFormat") or "CLOCK"
+    local entry = TIME_FORMATS[fmt] or TIME_FORMATS.CLOCK
+    return entry.fn(seconds)
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -129,10 +143,19 @@ end
 -- ─────────────────────────────────────────────────────────────────────────────
 local function RefreshFont()
     clockLabel:SetFont(STANDARD_TEXT_FONT, Get("fontSize"), Get("fontOutline"))
+    local sc = Get("fontShadowColor") or DEFAULTS.fontShadowColor
+    clockLabel:SetShadowColor(sc.r, sc.g, sc.b, sc.a)
+    clockLabel:SetShadowOffset(Get("fontShadowX") or 1, Get("fontShadowY") or -1)
 end
 
 local function RefreshColor()
-    clockLabel:SetTextColor(GetTextColor())
+    local r, g, b = GetTextColor()
+    local a = 1
+    if not Get("useClassColor") then
+        local fc = Get("fontColor")
+        a = fc.a or 1
+    end
+    clockLabel:SetTextColor(r, g, b, a)
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -151,7 +174,7 @@ clock:SetScript("OnUpdate", function(_, elapsed)
     _clockAcc = _clockAcc + elapsed
     if _clockAcc < 0.1 then return end  -- 10 fps is plenty for a M:SS timer
     _clockAcc = 0
-    clockLabel:SetText(FormatClock(GetTime() - startedAt))
+    clockLabel:SetText(FormatTime(GetTime() - startedAt))
 end)
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -192,7 +215,8 @@ end)
 -- Module API
 -- ─────────────────────────────────────────────────────────────────────────────
 local module = {}
-module.DEFAULTS = DEFAULTS
+module.DEFAULTS     = DEFAULTS
+module.TIME_FORMATS = TIME_FORMATS
 
 function module:Enable()
     clock:RestorePosition()
@@ -228,7 +252,7 @@ function module:SetPreviewMode(enabled)
     if enabled then
         RefreshFont()
         RefreshColor()
-        clockLabel:SetText("3:42")
+        clockLabel:SetText(FormatTime(222))
         clock:SetAlpha(1)
         clock:Show()
     else

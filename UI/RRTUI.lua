@@ -26,8 +26,9 @@ local BuildDebuffSoundEditUI = RRT_NS.UI.PrivateAuras.BuildDebuffSoundEditUI
 local BuildExportStringUI = RRT_NS.UI.General.BuildExportStringUI
 local BuildImportStringUI = RRT_NS.UI.General.BuildImportStringUI
 local BuildRaidFrameUI    = RRT_NS.UI.RaidFrame.BuildRaidFrameUI
-local BuildQoLUI          = RRT_NS.UI.QoL.BuildQoLUI
-local BuildNoteUI         = RRT_NS.UI.Note.BuildNoteUI
+local BuildQoLUI            = RRT_NS.UI.QoL.BuildQoLUI
+local BuildNoteUI           = RRT_NS.UI.Note.BuildNoteUI
+local BuildMythicPlusUI     = RRT_NS.UI.MythicPlus.BuildMythicPlusUI
 
 -- Get options builders from modules
 local BuildGeneralOptions = RRT_NS.UI.Options.General.BuildOptions
@@ -52,8 +53,7 @@ function RRTUI:Init()
     RRTUI:SetScale(scale)
 
     -- Create the tab container
-    -- 7 tabs on two rows: row1 = General/Raid/PrivateAura/Assignments (4), row2 = EncounterAlerts/Versions/QoL (3)
-    -- allocatedSpace = 1050 - (7-2)*2 - 230 = 810; floor(810/200) = 4 buttons per row → 2 rows
+    -- 7 tabs (General merged with Nicknames via sidebar): row1 = General/Raid/Note/PrivateAura, row2 = EncounterAlerts/Versions/QoL
     local tabList = TABS_LIST()
     local tabContainer = DF:CreateTabContainer(RRTUI, "Reversion", "RRTUI_TabsTemplate", tabList, {
         width = window_width,
@@ -138,8 +138,8 @@ function RRTUI:Init()
     -- Get tab frames
     local general_tab       = tabContainer:GetTabFrameByName("General")
     local raid_tab          = tabContainer:GetTabFrameByName("Raid")
+    local mythicplus_tab    = tabContainer:GetTabFrameByName("MythicPlus")
     local note_tab          = tabContainer:GetTabFrameByName("Note")
-    local nicknames_tab     = tabContainer:GetTabFrameByName("Nicknames")
     local versions_tab      = tabContainer:GetTabFrameByName("Versions")
     local encounteralerts_tab = tabContainer:GetTabFrameByName("EncounterAlerts")
     local privateaura_tab   = tabContainer:GetTabFrameByName("PrivateAura")
@@ -180,13 +180,104 @@ function RRTUI:Init()
     local nicknames_callback  = BuildNicknamesCallback()
     local privateaura_callback = BuildPrivateAurasCallback()
 
-    -- Build options menu for each tab
-    DF:BuildMenu(general_tab, general_options1_table, 10, -100, window_height - 10, false, options_text_template,
-        options_dropdown_template, options_switch_template, true, options_slider_template, options_button_template,
-        general_callback)
-    DF:BuildMenu(nicknames_tab, nicknames_options1_table, 10, -100, window_height - 10, false, options_text_template,
-        options_dropdown_template, options_switch_template, true, options_slider_template, options_button_template,
-        nicknames_callback)
+    -- General tab — sidebar with sub-tabs: General / Nicknames
+    do
+        local SIDEBAR_W = 130
+        local ITEM_H    = 20
+        local PAD       = 4
+        local SECTIONS  = {
+            { name = "General",   key = "general",   options = general_options1_table,   callback = general_callback },
+            { name = "Nicknames", key = "nicknames",  options = nicknames_options1_table,  callback = nicknames_callback },
+        }
+
+        local breadcrumb = general_tab:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        breadcrumb:SetPoint("TOPLEFT", general_tab, "TOPLEFT", 10, -76)
+        breadcrumb:SetText("|cFFBB66FF" .. SECTIONS[1].name .. "|r")
+
+        local sidebar = CreateFrame("Frame", nil, general_tab, "BackdropTemplate")
+        sidebar:SetPoint("TOPLEFT",    general_tab, "TOPLEFT",    4, -100)
+        sidebar:SetPoint("BOTTOMLEFT", general_tab, "BOTTOMLEFT", 4,  22)
+        sidebar:SetWidth(SIDEBAR_W)
+        sidebar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
+        sidebar:SetBackdropColor(0.05, 0.05, 0.05, 0.6)
+
+        local contentArea = CreateFrame("Frame", nil, general_tab)
+        contentArea:SetPoint("TOPLEFT",     general_tab, "TOPLEFT",     SIDEBAR_W + 8, -100)
+        contentArea:SetPoint("BOTTOMRIGHT", general_tab, "BOTTOMRIGHT", -4, 22)
+
+        local panels = {}
+        for _, sec in ipairs(SECTIONS) do
+            local panel = CreateFrame("Frame", "RRTGeneralSection_" .. sec.key, contentArea)
+            panel:SetAllPoints(contentArea)
+            panel:Hide()
+            DF:BuildMenu(panel, sec.options, 10, -5, window_height - 120, false,
+                options_text_template, options_dropdown_template, options_switch_template,
+                true, options_slider_template, options_button_template, sec.callback)
+            panels[sec.key] = panel
+        end
+
+        local activeBtn   = nil
+        local currentName = SECTIONS[1].name
+
+        local function SelectSection(key, btn, name)
+            for k, p in pairs(panels) do p:SetShown(k == key) end
+            if activeBtn then
+                activeBtn:SetBackdropColor(0.1, 0.1, 0.1, 0.6)
+                activeBtn:SetBackdropBorderColor(0.25, 0.25, 0.25, 0.8)
+            end
+            local c = RRT.Settings.TabSelectionColor or {0.639, 0.188, 0.788, 1}
+            btn:SetBackdropColor(c[1]*0.4, c[2]*0.4, c[3]*0.4, 0.8)
+            btn:SetBackdropBorderColor(c[1], c[2], c[3], 1)
+            activeBtn    = btn
+            currentName  = name
+            local hex = string.format("%02X%02X%02X",
+                math.floor(c[1]*255+0.5), math.floor(c[2]*255+0.5), math.floor(c[3]*255+0.5))
+            breadcrumb:SetText("|cFF" .. hex .. name .. "|r")
+        end
+
+        for i, sec in ipairs(SECTIONS) do
+            local btn = CreateFrame("Button", nil, sidebar, "BackdropTemplate")
+            btn:SetSize(SIDEBAR_W - PAD * 2, ITEM_H)
+            btn:SetPoint("TOPLEFT", sidebar, "TOPLEFT", PAD, -(PAD + (i - 1) * (ITEM_H + 4)))
+            btn:SetBackdrop({
+                bgFile   = "Interface\\Buttons\\WHITE8X8",
+                edgeFile = "Interface\\Buttons\\WHITE8X8",
+                edgeSize = 1,
+            })
+            btn:SetBackdropColor(0.1, 0.1, 0.1, 0.6)
+            btn:SetBackdropBorderColor(0.25, 0.25, 0.25, 0.8)
+
+            local btnText = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            do local f, _, fl = GameFontNormalSmall:GetFont()
+               if f then btnText:SetFont(f, 9, fl or "") end
+            end
+            btnText:SetPoint("CENTER", btn, "CENTER", 0, 0)
+            btnText:SetText(sec.name)
+            btnText:SetTextColor(0.9, 0.9, 0.9, 1)
+
+            local key  = sec.key
+            local name = sec.name
+            btn:SetScript("OnClick", function(self) SelectSection(key, self, name) end)
+            btn:SetScript("OnEnter", function(self)
+                if activeBtn ~= self then self:SetBackdropColor(0.15, 0.15, 0.15, 0.8) end
+            end)
+            btn:SetScript("OnLeave", function(self)
+                if activeBtn ~= self then self:SetBackdropColor(0.1, 0.1, 0.1, 0.6) end
+            end)
+
+            if i == 1 then SelectSection(key, btn, name) end
+        end
+
+        tinsert(RRT_NS.ThemeColorCallbacks, function(r, g, b, a)
+            if activeBtn then
+                activeBtn:SetBackdropColor(r*0.4, g*0.4, b*0.4, 0.8)
+                activeBtn:SetBackdropBorderColor(r, g, b, 1)
+            end
+            local hex = string.format("%02X%02X%02X",
+                math.floor(r*255+0.5), math.floor(g*255+0.5), math.floor(b*255+0.5))
+            breadcrumb:SetText("|cFF" .. hex .. currentName .. "|r")
+        end)
+    end
     DF:BuildMenu(RRT_NS.RaidBuffCheck, RaidBuffMenu, 2, -30, 40, false, options_text_template,
         options_dropdown_template, options_switch_template, true, options_slider_template, options_button_template,
         nil)
@@ -196,6 +287,8 @@ function RRTUI:Init()
     -- Note tab — sub-tab container
     BuildNoteUI(note_tab)
     BuildQoLUI(QoL_tab)
+
+    BuildMythicPlusUI(mythicplus_tab)
     RRT_NS.RaidBuffCheck:SetMovable(false)
     RRT_NS.RaidBuffCheck:EnableMouse(false)
 

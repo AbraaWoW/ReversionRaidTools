@@ -47,40 +47,28 @@ end
 -- Core logic
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Pending playstyle to apply once an active listing exists.
-local _pendingPlaystyle = nil
-
--- Called by LFG_LIST_ACTIVE_ENTRY_UPDATE: once a listing is live, push the
--- saved playstyle via C_LFGList.UpdateListing (C-level, no taint).
-local function OnActiveEntryUpdate()
-    if not _pendingPlaystyle then return end
-    local pending = _pendingPlaystyle
-    _pendingPlaystyle = nil
-    local entryInfo = C_LFGList.GetActiveEntryInfo and C_LFGList.GetActiveEntryInfo()
-    if not entryInfo then return end
-    entryInfo.playstyleID = pending
-    C_LFGList.UpdateListing(entryInfo)
-end
-
+-- C_LFGList.UpdateListing() is protected in Midnight 12.x and cannot be called
+-- from addon code. Instead we trigger the dropdown's own selection callback so
+-- Blizzard's code sets generalPlaystyle and handles the rest.
 local function ApplyPlaystyle(entryCreation)
     if not entryCreation then return end
     local ps = db().playstyle
     if not ps or ps < 1 or ps > 4 then return end
 
-    -- Visual: pre-fill the dropdown text so the user sees the correct value.
-    -- We must NOT write entryCreation.generalPlaystyle directly — that taints the
-    -- field, and Blizzard's code reading it to call SetEntryTitle() (now protected
-    -- in Midnight 12.x) causes ADDON_ACTION_BLOCKED.
     local dropdown = entryCreation.PlayStyleDropdown
-    if dropdown and dropdown.SetText then
+    if not dropdown then return end
+
+    -- Try to select via the dropdown's own API so Blizzard's callback fires
+    -- and sets generalPlaystyle through protected code (no addon taint).
+    if dropdown.SetValue then
+        dropdown:SetValue(ps)
+    elseif dropdown.SetSelectedValue then
+        dropdown:SetSelectedValue(ps)
+    elseif dropdown.SetText then
+        -- Last resort: visual only (user must re-pick to get it saved)
         local text = (_G[PLAYSTYLE_GLOBALS[ps]]) or PLAYSTYLE_NAMES[ps]
         if text then dropdown:SetText(text) end
     end
-
-    -- Queue a listing update: applied once the listing is actually created
-    -- (LFG_LIST_ACTIVE_ENTRY_UPDATE fires), via C_LFGList.UpdateListing which
-    -- is a C-level API and does not propagate addon taint.
-    _pendingPlaystyle = ps
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -104,13 +92,6 @@ local function InstallHooks()
         local activityInfo = C_LFGList.GetActivityInfoTable(activityID)
         if not activityInfo or not activityInfo.isMythicPlusActivity then return end
         ApplyPlaystyle(entryCreation)
-    end)
-
-    -- Apply queued playstyle once the listing is live (creation submitted).
-    local entryUpdateFrame = CreateFrame("Frame", "RRTAutoPlaystyleEntryFrame")
-    entryUpdateFrame:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
-    entryUpdateFrame:SetScript("OnEvent", function()
-        if IsEnabled() then OnActiveEntryUpdate() end
     end)
 end
 

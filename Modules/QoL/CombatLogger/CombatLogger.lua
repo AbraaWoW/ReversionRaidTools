@@ -59,6 +59,7 @@ StaticPopupDialogs["RRT_COMBATLOG_PROMPT"] = {
         end
     end,
     OnCancel = function(self)
+        if not self then return end
         local data = self.data
         if not data or not db() then return end
         db().instances = db().instances or {}

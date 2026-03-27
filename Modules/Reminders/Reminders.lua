@@ -1418,6 +1418,9 @@ end
 
 function RRT_NS:UpdateNoteFrame(Name, SettingsTable, text)
     if SettingsTable.enabled then
+        if not self[Name] then
+            self:CreateNoteFrame(Name, SettingsTable)
+        end
         self[Name]:SetAllPoints(self[Name.."Mover"])
         self[Name].Text:SetFont(self.LSM:Fetch("font", SettingsTable.Font), SettingsTable.FontSize, "OUTLINE")
         self[Name].Text:SetWidth(SettingsTable.Width)

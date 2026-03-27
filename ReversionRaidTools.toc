@@ -75,6 +75,14 @@ Modules\QoL\AutoKeystone\AutoKeystone.lua
 Modules\QoL\AutoQueue\AutoQueue.lua
 Modules\QoL\AutoPlaystyle\AutoPlaystyle.lua
 
+# Modules - MythicPlus
+Modules\MythicPlus\PotionAlert.lua
+Modules\MythicPlus\FocusInterrupt.lua
+Modules\MythicPlus\FocusMarker.lua
+Modules\MythicPlus\DeathAlert.lua
+Modules\MythicPlus\HealerMana.lua
+Modules\MythicPlus\GroupJoined.lua
+
 # UI - Core (must load first)
 UI\Core.lua
 
@@ -126,6 +134,8 @@ Modules\QoL\AutoQueue\Options.lua
 Modules\QoL\AutoPlaystyle\Options.lua
 Modules\RaidFrame\Options.lua
 UI\Options\Nicknames.lua
+Modules\MythicPlus\Options.lua
+Modules\MythicPlus\UI.lua
 
 # UI - Entry Point
 UI\RRTUI.lua

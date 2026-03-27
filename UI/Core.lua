@@ -13,8 +13,8 @@ local function MakeTabs()
     return {
         { name = "General",         text = L["tab_general"] },
         { name = "Raid",            text = L["tab_raid"] },
+        { name = "MythicPlus",      text = L["tab_mythicplus"] },
         { name = "Note",            text = L["tab_note"] },
-        { name = "Nicknames",       text = L["tab_nicknames"] },
         { name = "PrivateAura",     text = L["tab_private_aura"] },
         { name = "EncounterAlerts", text = L["tab_encounter_alerts"] },
         { name = "Versions",        text = L["tab_versions"] },
@@ -66,7 +66,7 @@ local RRTUI = DF:CreateSimplePanel(UIParent, window_width, window_height, "|cFFB
 RRTUI:SetPoint("CENTER")
 RRTUI:SetFrameStrata("HIGH")
 DF:BuildStatusbarAuthorInfo(RRTUI.StatusBar, _, "x |cFFBB66FFbird|r")
-RRTUI.StatusBar.discordTextEntry:SetText("")
+RRTUI.StatusBar.discordTextEntry:SetText("https://discord.gg/5bhTbtQtCf")
 
 -- Red close button
 do

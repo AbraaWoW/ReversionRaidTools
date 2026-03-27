@@ -288,6 +288,33 @@ function RRT_NS:EventHandler(e, wowevent, internal, ...) -- internal checks whet
                     if RRT.AutoPlaystyle[k] == nil then RRT.AutoPlaystyle[k] = v end
                 end
             end
+            -- MythicPlus modules
+            local MP_MODULES = {
+                { key = "MP_PotionAlert",   ns = "MP_PotionAlert"   },
+                { key = "MP_FocusInterrupt",ns = "MP_FocusInterrupt" },
+                { key = "MP_FocusMarker",   ns = "MP_FocusMarker"   },
+                { key = "MP_DeathAlert",    ns = "MP_DeathAlert"    },
+                { key = "MP_HealerMana",    ns = "MP_HealerMana"    },
+                { key = "MP_GroupJoined",   ns = "MP_GroupJoined"   },
+            }
+            for _, info in ipairs(MP_MODULES) do
+                if not RRT[info.key] then RRT[info.key] = {} end
+                local m = RRT_NS[info.ns]
+                if m and m.DEFAULTS then
+                    for k, v in pairs(m.DEFAULTS) do
+                        if RRT[info.key][k] == nil then
+                            if type(v) == "table" then
+                                -- shallow copy (nested tables handled in Enable())
+                                local t = {}
+                                for tk, tv in pairs(v) do t[tk] = tv end
+                                RRT[info.key][k] = t
+                            else
+                                RRT[info.key][k] = v
+                            end
+                        end
+                    end
+                end
+            end
 
             if RRT.EncounterAlerts[3179] then -- automatically enable CC Add display if user had previously enabled alerts for the first time loging in after adding the option.
                 if RRT.EncounterAlerts[3179].CCAddsDisplay == nil then
@@ -334,6 +361,12 @@ function RRT_NS:EventHandler(e, wowevent, internal, ...) -- internal checks whet
         if self.AutoQueue         then self.AutoQueue:Enable()         end
         if self.AutoPlaystyle     then self.AutoPlaystyle:Enable()     end
         if self.CDNote            then self.CDNote:Enable()            end
+        if self.MP_PotionAlert    then self.MP_PotionAlert:Enable()    end
+        if self.MP_FocusInterrupt then self.MP_FocusInterrupt:Enable() end
+        if self.MP_FocusMarker    then self.MP_FocusMarker:Enable()    end
+        if self.MP_DeathAlert     then self.MP_DeathAlert:Enable()     end
+        if self.MP_HealerMana     then self.MP_HealerMana:Enable()     end
+        if self.MP_GroupJoined    then self.MP_GroupJoined:Enable()    end
         self.RRTFrame:SetAllPoints(UIParent)
         local MyFrame = self.LGF.GetUnitFrame("player") -- need to call this once to init the library properly I think
         if RRT.PASettings.enabled then self:InitPA() end

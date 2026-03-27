@@ -36,7 +36,9 @@
       "Bash(head -30 grep -n \"InCombatLockdown\\\\|sCombat\\\\|combat\" C:/Users/Abraa/Documents/GitHub/ReversionRaidTools/Modules/PrivateAura/Core.lua)",
       "Bash(find C:UsersAbraaDocumentsGitHubReversionRaidTools -type d -name *QoL* -o -type d -name *qol*)",
       "Bash(find C:/Users/Abraa/Downloads/atrocityUI -name *.lua -path *Framework*)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(ls:*)",
+      "Bash(grep -E \"\\\\.\\(lua|xml|toc\\)$\")"
     ]
   }
 }
