@@ -38,7 +38,8 @@
       "Bash(find C:/Users/Abraa/Downloads/atrocityUI -name *.lua -path *Framework*)",
       "WebFetch(domain:api.github.com)",
       "Bash(ls:*)",
-      "Bash(grep -E \"\\\\.\\(lua|xml|toc\\)$\")"
+      "Bash(grep -E \"\\\\.\\(lua|xml|toc\\)$\")",
+      "Bash(grep:*)"
     ]
   }
 }

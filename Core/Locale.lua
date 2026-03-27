@@ -220,7 +220,8 @@ local EN = {
     memo_ex_2  = "-> At 60s phase 2, shown to tanks only",
     memo_ex_3  = "-> Shown only to player Abraa",
 
-    midnight_frame = "Raidframe",
+    midnight_frame     = "Raidframe",
+    midnight_pa_filter = "PA Filter",
     midnight_debuffs = "Debuffs",
     opt_raidframe_show_debuffs      = "Show Debuff on Frame",
     opt_raidframe_show_debuffs_desc = "Show debuff icons on the raid frame.",
@@ -288,6 +289,14 @@ local EN = {
     opt_raidframe_disable_all_bosses_desc= "Disables debuff tracking for every boss across all saved profiles.",
     header_raidframe_spell           = "Spell / Ability",
     header_raidframe_spell_list      = "Profiles Overview",
+    pa_picker_header_desc            = "— check to show on the Raid Frame",
+    pa_picker_empty                  = "No Private Aura spells found in profiles.\nAdd boss spells first (Profiles tab).",
+    opt_raidframe_load_defaults      = "Load Midnight S1 Defaults",
+    opt_raidframe_load_defaults_desc = "Loads the default Midnight S1 boss profiles (Imperator Averzian, Vorasius, Vaelgor & Ezzorak, etc.) with their spell IDs. Existing profiles are kept — only missing bosses/spells are added.",
+    pa_filter_label                  = "Private Aura filter",
+    pa_filter_desc                   = "Check the |cFFBB66FF[PA]|r spells on the right to show only those auras.\nLeave empty to show all PA slots (default).",
+    pa_filter_input_name             = "PA Spell IDs",
+    pa_filter_input_desc             = "Advanced: comma-separated spell IDs. Managed automatically via the checkboxes on the right.\nLeave empty to show all PA slots.",
     opt_raidframe_new_spell          = "Spell ID",
     opt_raidframe_new_spell_desc     = "Enter the numeric spell ID. Find it on wowhead.com/spell=ID.",
     opt_raidframe_current_spells     = "Current Spells",
@@ -1504,6 +1513,10 @@ local EN = {
     savenote_saved          = "Saved: ",
     savenote_updated        = "Updated: ",
     savenote_loaded         = "Loaded: ",
+    -- Create Note / CDNote
+    createnote_no_boss_data = "No data for this boss.",
+    cdnote_mrt_not_found    = "MRT not detected or note is empty.",
+    cdnote_import_mrt       = "Import from MRT (auto)",
 }
 
 local FR = {
@@ -1722,7 +1735,8 @@ local FR = {
     memo_ex_2  = "-> A 60s phase 2, affiché aux tanks uniquement",
     memo_ex_3  = "-> Affiché uniquement au joueur Abraa",
 
-    midnight_frame = "Raidframe",
+    midnight_frame     = "Raidframe",
+    midnight_pa_filter = "PA Filter",
     midnight_debuffs = "Debuffs",
     opt_raidframe_show_debuffs      = "Afficher Debuff sur la Frame",
     opt_raidframe_show_debuffs_desc = "Affiche les icones de debuff sur le raid frame.",
@@ -1790,6 +1804,14 @@ local FR = {
     opt_raidframe_disable_all_bosses_desc= "Desactive le tracking de debuffs pour tous les boss de tous les profils sauvegardes.",
     header_raidframe_spell           = "Sort / Capacite",
     header_raidframe_spell_list      = "Apercu des Profils",
+    pa_picker_header_desc            = "— cocher pour afficher sur la RaidFrame",
+    pa_picker_empty                  = "Aucune Private Aura trouvee dans les profils.\nAjoute d'abord les boss dans l'onglet Profiles.",
+    opt_raidframe_load_defaults      = "Charger Defaults Midnight S1",
+    opt_raidframe_load_defaults_desc = "Charge les profils boss Midnight S1 par defaut (Imperator Averzian, Vorasius, Vaelgor & Ezzorak, etc.) avec leurs spell IDs. Les profils existants sont conserves — seuls les boss/spells manquants sont ajoutes.",
+    pa_filter_label                  = "Filtre Private Aura",
+    pa_filter_desc                   = "Cochez les sorts |cFFBB66FF[PA]|r a droite pour afficher uniquement ces auras.\nLaisser vide = tous les slots PA (defaut).",
+    pa_filter_input_name             = "PA Spell IDs",
+    pa_filter_input_desc             = "Avance : IDs separes par virgule. Gere automatiquement via les cases a droite.\nLaisser vide = tous les slots PA.",
     opt_raidframe_new_spell          = "Spell ID",
     opt_raidframe_new_spell_desc     = "Entrez l'ID numerique du sort. Trouvez-le sur wowhead.com/spell=ID.",
     opt_raidframe_current_spells     = "Sorts Actuels",
@@ -3006,6 +3028,10 @@ local FR = {
     savenote_saved          = "Sauvegardé : ",
     savenote_updated        = "Mis à jour : ",
     savenote_loaded         = "Chargé : ",
+    -- Create Note / CDNote
+    createnote_no_boss_data = "Aucune donnée pour ce boss.",
+    cdnote_mrt_not_found    = "MRT non détecté ou note vide.",
+    cdnote_import_mrt       = "Import depuis MRT (auto)",
 }
 
 -- ============================================================

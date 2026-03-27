@@ -21,31 +21,31 @@ local TOOLBAR_H = BTN_PAD + ICON_W + BTN_PAD + ICON_W + BTN_PAD + BTN_H + BTN_PA
 
 -- ── 25-color palette (MRT VisNote) — {r,g,b,hex,name} ──────────────────────
 local PALETTE = {
-    {0,      0,      0,      "000000", "Noir"},
-    {0.498,  0.498,  0.498,  "7F7F7F", "Gris"},
-    {0.533,  0,      0.082,  "880015", "Rouge Fonce"},
-    {0.929,  0.11,   0.141,  "ED1C24", "Rouge"},
+    {0,      0,      0,      "000000", "Black"},
+    {0.498,  0.498,  0.498,  "7F7F7F", "Gray"},
+    {0.533,  0,      0.082,  "880015", "Dark Red"},
+    {0.929,  0.11,   0.141,  "ED1C24", "Red"},
     {1,      0.498,  0.153,  "FF7F27", "Orange"},
-    {1,      0.949,  0,      "FFF200", "Jaune"},
-    {0.133,  0.694,  0.298,  "22B14C", "Vert"},
-    {0,      0.635,  0.91,   "00A2E8", "Bleu"},
+    {1,      0.949,  0,      "FFF200", "Yellow"},
+    {0.133,  0.694,  0.298,  "22B14C", "Green"},
+    {0,      0.635,  0.91,   "00A2E8", "Blue"},
     {0.247,  0.282,  0.8,    "3F48CC", "Indigo"},
-    {0.639,  0.286,  0.643,  "A349A4", "Violet"},
-    {1,      1,      1,      "FFFFFF", "Blanc"},
-    {0.765,  0.765,  0.765,  "C3C3C3", "Gris Clair"},
-    {0.725,  0.478,  0.341,  "B97A57", "Marron"},
-    {1,      0.682,  0.788,  "FFB6C9", "Rose"},
-    {1,      0.788,  0.055,  "FFC90E", "Or"},
-    {0.937,  0.894,  0.69,   "EFE4B0", "Jaune Pale"},
-    {0.71,   0.902,  0.114,  "B5E61D", "Jaune-Vert"},
-    {0.6,    0.851,  0.918,  "99D9EA", "Bleu Ciel"},
-    {0.439,  0.573,  0.745,  "7092BE", "Bleu Acier"},
-    {0.784,  0.749,  0.906,  "C8BFE7", "Lavande"},
-    {0.67,   0.83,   0.45,   "ABD473", "Menthe"},
-    {0,      1,      0.592,  "00FF97", "Cyan-Vert"},
-    {0.529,  0.529,  0.929,  "8787ED", "Pervenche"},
-    {0.639,  0.188,  0.788,  "A330C9", "Violet RRT"},
-    {0.2,    0.58,   0.5,    "339480", "Sarcelle"},
+    {0.639,  0.286,  0.643,  "A349A4", "Purple"},
+    {1,      1,      1,      "FFFFFF", "White"},
+    {0.765,  0.765,  0.765,  "C3C3C3", "Light Gray"},
+    {0.725,  0.478,  0.341,  "B97A57", "Brown"},
+    {1,      0.682,  0.788,  "FFB6C9", "Pink"},
+    {1,      0.788,  0.055,  "FFC90E", "Gold"},
+    {0.937,  0.894,  0.69,   "EFE4B0", "Pale Yellow"},
+    {0.71,   0.902,  0.114,  "B5E61D", "Yellow-Green"},
+    {0.6,    0.851,  0.918,  "99D9EA", "Sky Blue"},
+    {0.439,  0.573,  0.745,  "7092BE", "Steel Blue"},
+    {0.784,  0.749,  0.906,  "C8BFE7", "Lavender"},
+    {0.67,   0.83,   0.45,   "ABD473", "Mint"},
+    {0,      1,      0.592,  "00FF97", "Cyan-Green"},
+    {0.529,  0.529,  0.929,  "8787ED", "Periwinkle"},
+    {0.639,  0.188,  0.788,  "A330C9", "RRT Purple"},
+    {0.2,    0.58,   0.5,    "339480", "Teal"},
 }
 
 -- ── Raid-target icons ────────────────────────────────────────────────────────
@@ -136,112 +136,8 @@ local RAID_CDS = {
 }
 
 -- ── Encounter data — Extension > Instance > Boss ─────────────────────────────
-local ENCOUNTERS = {
-    {
-        extension = "Midnight",
-        instances = {
-            {
-                instance = "The Voidspire",
-                bosses = {
-                    {id=3176, name="Imperator Averzian", spells={
-                        {spellID=1280035, name="Cosmic Shell"},
-                        {spellID=1253918, name="Imperator's Glory"},
-                        {spellID=1251361, name="Shadow's Advance"},
-                        {spellID=1251583, name="March of the Endless"},
-                        {spellID=1249262, name="Umbral Collapse"},
-                        {spellID=1255749, name="Gathering Darkness"},
-                        {spellID=1255702, name="Pitch Bulwark"},
-                        {spellID=1249251, name="Dark Upheaval"},
-                        {spellID=1265540, name="Blackening Wounds"},
-                    }},
-                    {id=3177, name="Vorasius", spells={
-                        {spellID=1244012, name="Shadowclaw Slam"},
-                        {spellID=1259184, name="Blisterburst"},
-                        {spellID=1241864, name="Void Breath"},
-                        {spellID=1273067, name="Aftershock"},
-                        {spellID=1260046, name="Primordial Roar"},
-                        {spellID=1272937, name="Primordial Power"},
-                        {spellID=1244419, name="Overpowering Pulse"},
-                    }},
-                    {id=3179, name="Fallen-King Salhadaar", spells={
-                        {spellID=1246175, name="Entropic Unraveling"},
-                        {spellID=1245960, name="Void Infusion"},
-                        {spellID=1254088, name="Shadow Fracture"},
-                        {spellID=1250991, name="Dark Radiation"},
-                        {spellID=1248697, name="Despotic Command"},
-                        {spellID=1248709, name="Oppressive Darkness"},
-                        {spellID=1253032, name="Shattering Twilight"},
-                        {spellID=1271577, name="Destabilizing Strikes"},
-                        {spellID=1247738, name="Void Convergence"},
-                        {spellID=1275056, name="Nexus Shield"},
-                    }},
-                    {id=3178, name="Vaelgor", spells={
-                        {spellID=1249748, name="Midnight Flames"},
-                        {spellID=1248847, name="Radiant Barrier"},
-                        {spellID=1245391, name="Gloom"},
-                        {spellID=1245554, name="Gloomtouched"},
-                        {spellID=1245420, name="Gloomfield"},
-                        {spellID=1262623, name="Nullbeam"},
-                        {spellID=1244672, name="Nullzone"},
-                        {spellID=1244413, name="Nullsnap"},
-                        {spellID=1252157, name="Nullzone Implosion"},
-                        {spellID=1244221, name="Dread Breath"},
-                        {spellID=1270497, name="Shadowmark"},
-                        {spellID=1245645, name="Rakfang"},
-                        {spellID=1265131, name="Vaelwing"},
-                    }},
-                    {id=0,    name="War Chaplain Senn", spells={
-                        {spellID=1248451, name="Aura of Peace"},
-                        {spellID=1248983, name="Execution Sentence"},
-                        {spellID=1248674, name="Sacred Shield"},
-                        {spellID=1248721, name="Tyr's Wrath"},
-                        {spellID=1248652, name="Divine Toll"},
-                        {spellID=1246736, name="Judgment"},
-                        {spellID=1251812, name="Final Verdict"},
-                        {spellID=1251859, name="Shield of the Righteous"},
-                        {spellID=1248450, name="Aura of Wrath"},
-                    }},
-                    {id=0,    name="Alleria Windrunner", spells={
-                        {spellID=1233602, name="Silverstrike Arrow"},
-                        {spellID=1237837, name="Call of the Void"},
-                        {spellID=1237614, name="Ranger Captain's Mark"},
-                        {spellID=1241520, name="Corrupting Essence"},
-                        {spellID=1239080, name="Aspect of the End"},
-                        {spellID=1233865, name="Null Corona"},
-                        {spellID=1233778, name="Echoing Darkness"},
-                        {spellID=1237251, name="Empowering Darkness"},
-                        {spellID=1239089, name="Gravity Collapse"},
-                        {spellID=1232470, name="Grasp of Emptiness"},
-                    }},
-                },
-            },
-            {
-                instance = "The Dreamrift",
-                bosses = {
-                    {id=3306, name="Chimaerus the Undreamt God", spells={
-                        {spellID=1262305, name="Alndust Upheaval"},
-                        {spellID=1245727, name="Alnshroud"},
-                        {spellID=1252863, name="Insatiable"},
-                        {spellID=1245486, name="Corrupted Devastation"},
-                        {spellID=1250953, name="Rift Sickness"},
-                        {spellID=1262020, name="Colossal Strikes"},
-                        {spellID=1245698, name="Alnsight"},
-                    }},
-                },
-            },
-            {
-                instance = "March on Quel'Danas",
-                bosses = {
-                    {id=3182, name="Belo'ren, Child of Al'ar"},
-                    {id=3183, name="Midnight Falls"},
-                },
-            },
-        },
-    },
-}
-
 local function BuildEncounters()
-    return ENCOUNTERS
+    return RRT_NS.RaidData
 end
 
 -- ── Custom scrollbar (same pattern as NotePanel) ────────────────────────────
@@ -906,7 +802,7 @@ local function BuildCreateNotePanel(panel)
     -- Empty label
     local emptySpellLbl = spellContent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     emptySpellLbl:SetPoint("TOP", spellContent, "TOP", 0, -8)
-    emptySpellLbl:SetText("|cFF666666Aucune donnée pour ce boss.|r")
+    emptySpellLbl:SetText("|cFF666666" .. L["createnote_no_boss_data"] .. "|r")
 
     RefreshSpellList = function()
         if not curBoss then return end

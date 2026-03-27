@@ -90,18 +90,22 @@ end
 RRT_NS.AddAssignments[encID] = function(self, id) -- on ENCOUNTER_START
     if not (self.Assignments and self.Assignments[encID]) then return end
     if (not (id and id == 16)) and not self:DifficultyCheck(16) then return end -- Mythic only
-    local subgroup = self:GetSubGroup("player") or 0
+    local subgroup = self:GetSubGroup("player")
+    if not subgroup then return end
     local Alert = self:CreateDefaultAlert("", nil, nil, nil, 1, encID, true) -- text, Type, spellID, dur, phase, encID
-    -- Assigning Group 1&2 on first soak, Group 3&4 on second soak. This is overkill as only 7 people are required but not sure how the strat is gonna be yet
-    local Soak = self:CreateDefaultAlert(subgroup <= 2 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK", nil, nil, 10, 1, encID)
-    Alert.time, Alert.text, Alert.TTSTimer = 54.4, subgroup <= 2 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK", 4
-    self:AddToReminder(Alert)
-    Alert.time, Alert.text = 156.1, subgroup >= 3 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK"
-    self:AddToReminder(Alert)
-    Alert.time, Alert.text = 201.2, subgroup <= 2 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK"
-    self:AddToReminder(Alert)
-    Alert.time, Alert.text = 246.1, subgroup >= 3 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK"
-    self:AddToReminder(Alert)
+    local Soak = self:CreateDefaultAlert("", "Text", nil, 8, 1, encID)
+    local timers = {14.2, 114.2, 262, 359.6, 479.2}
+    for i, v in ipairs(timers) do
+        Soak.text = subgroup <= 2 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK"
+        Soak.TTS = subgroup <= 2 and "Soak" or "Don't soak"
+        self:AddToReminder(Soak)
+    end
+    timers = {64.2, 213, 314.6, 409.7}
+    for i, v in ipairs(timers) do
+        Soak.text = subgroup >= 3 and "|cFF00FF00SOAK" or "|cFFFF0000DON'T SOAK"
+        Soak.TTS = subgroup >= 3 and "Soak" or "Don't soak"
+        self:AddToReminder(Soak)
+    end
 
 
     if RRT.AssignmentSettings.OnPull then

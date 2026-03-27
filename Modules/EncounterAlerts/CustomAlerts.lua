@@ -213,7 +213,7 @@ local function MakeSectionHeader(parent, text)
     line:SetColorTexture(C_PURPLE[1], C_PURPLE[2], C_PURPLE[3], 0.4)
     line:SetHeight(1)
 
-    local lbl = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    local lbl = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetText("|cFFBB66FF" .. text .. "|r")
     lbl._sectionText = text
     lbl._line = line
@@ -311,6 +311,19 @@ local function BuildCustomAlertsPanel(parent)
     hdrLine:SetPoint("LEFT",  hdrLbl, "RIGHT",  4, 0)
     hdrLine:SetPoint("RIGHT", panel,  "RIGHT", -FORM_PAD, 0)
     hdrLine:SetPoint("TOP",   hdrLbl, "CENTER", 0, 0)
+
+    -- Collapse toggle
+    local _formVisible = true
+    local collapseBtn = CreateFrame("Button", nil, panel)
+    collapseBtn:SetSize(20, 14)
+    collapseBtn:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -FORM_PAD, y - 1)
+    local collapseTxt = collapseBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    collapseTxt:SetAllPoints()
+    collapseTxt:SetText("▲")
+    collapseTxt:SetTextColor(C_PURPLE[1], C_PURPLE[2], C_PURPLE[3], 1)
+    collapseTxt:SetJustifyH("CENTER")
+    collapseTxt:SetJustifyV("MIDDLE")
+
     y = y - 20
 
     -- Form container
@@ -536,6 +549,31 @@ local function BuildCustomAlertsPanel(parent)
     scrollFrame:SetScript("OnSizeChanged", function(self, w)
         content:SetWidth(w)
         for _, row in ipairs(rowPool) do row:SetWidth(w) end
+    end)
+
+    -- ── Collapse logic ────────────────────────────────────────────────────
+    local SCROLL_Y_EXPANDED  = y            -- -338 : below all form widgets
+    local SCROLL_Y_COLLAPSED = -(FORM_PAD + 20)  -- -30 : just below section header
+
+    local function UpdateCollapse()
+        local show = _formVisible
+        form:SetShown(show)
+        infoBox:SetShown(show)
+        btnTest:SetShown(show)
+        btnAdd:SetShown(show)
+        statusFS:SetShown(show)
+        hdr2Lbl:SetShown(show)
+        hdr2Line:SetShown(show)
+        collapseTxt:SetText(show and "▲" or "▼")
+        scrollFrame:ClearAllPoints()
+        scrollFrame:SetPoint("TOPLEFT",     panel, "TOPLEFT",     FORM_PAD,
+            show and SCROLL_Y_EXPANDED or SCROLL_Y_COLLAPSED)
+        scrollFrame:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -28, 6)
+    end
+
+    collapseBtn:SetScript("OnClick", function()
+        _formVisible = not _formVisible
+        UpdateCollapse()
     end)
 
     -- ── List refresh ──────────────────────────────────────────────────────

@@ -37,6 +37,29 @@ local _bossRaidDropEntry = nil
 local _bossSelectEntry   = nil
 local _topRaidDropEntry  = nil
 
+-- ── PA filter helpers ─────────────────────────────────────────────────────
+local function IsInPAFilter(spellID)
+    for id in (RRT.Settings.RaidFrame.paSpellIDs or ""):gmatch("%d+") do
+        if tonumber(id) == spellID then return true end
+    end
+    return false
+end
+
+local function TogglePAFilter(spellID, checked)
+    local s = RRT.Settings.RaidFrame
+    local ids = {}
+    for id in (s.paSpellIDs or ""):gmatch("%d+") do
+        local n = tonumber(id)
+        if n and n ~= spellID then tinsert(ids, tostring(n)) end
+    end
+    if checked then tinsert(ids, tostring(spellID)) end
+    s.paSpellIDs = table.concat(ids, ",")
+    local RF = RRT_NS.RaidFrame
+    RF._needsPARebuild = true
+    local f = RF.frame
+    if f and f:IsShown() then f:Refresh() end
+end
+
 -- Confirmation dialog for "Clear All Profiles"
 StaticPopupDialogs["RRT_CONFIRM_CLEAR_PROFILES"] = {
     text      = "|cFFFF4444Warning:|r This will delete ALL raid profiles and boss spells. This cannot be undone. Continue?",
@@ -260,15 +283,13 @@ local function BuildFrameOptions()
 
         { type = "blank" },
 
-        { type = "label", get = function() return "|cFFBB66FFPrivate Aura filter|r" end,
+        { type = "label", get = function() return "|cFFBB66FF" .. L["pa_filter_label"] .. "|r" end,
           text_template = DF:GetTemplate("font", "ORANGE_FONT_TEMPLATE") },
-        { type = "label", get = function()
-              return "Spell IDs (comma-separated). When set, only those specific Private Auras are shown.\nLeave empty to show all PA slots (default)."
-          end },
+        { type = "label", get = function() return L["pa_filter_desc"] end },
         {
             type  = "input",
-            name  = "PA Spell IDs",
-            desc  = "Comma-separated spell IDs to show as Private Auras.\nExample: 443612,434793\nLeave empty to show all PA slots.",
+            name  = L["pa_filter_input_name"],
+            desc  = L["pa_filter_input_desc"],
             get   = function() return RRT.Settings.RaidFrame.paSpellIDs or "" end,
             set   = function(self, _, value)
                 RRT.Settings.RaidFrame.paSpellIDs = value or ""
@@ -371,7 +392,8 @@ local function EJImport(matchMapID)
             if not ok2 or not enc then break end
             local encKey
             if type(enc) == "number" then
-                encKey = tostring(enc)
+                local okN, encName = pcall(EJ_GetEncounterInfo, enc)
+                encKey = tostring(enc) .. (okN and encName and (" (" .. encName .. ")") or "")
             elseif type(enc) == "string" and enc ~= "" then
                 encKey = enc
             end
@@ -415,6 +437,19 @@ local function BuildProfileOptions()
     return {
         { type = "label", get = function() return L["header_raidframe_profiles"] end,
           text_template = DF:GetTemplate("font", "ORANGE_FONT_TEMPLATE") },
+
+        {
+            type  = "button",
+            name  = L["opt_raidframe_load_defaults"],
+            desc  = L["opt_raidframe_load_defaults_desc"],
+            func  = function()
+                RRT_NS.RaidFrame:PopulateDefaults()
+                if _overviewRefresh then _overviewRefresh() end
+                if _menuRefresh     then _menuRefresh()     end
+            end,
+        },
+
+        { type = "blank" },
 
         -- ── Raid ──────────────────────────────────────────────────────────────
         (function()
@@ -830,6 +865,7 @@ local function BuildProfileOverview(parent)
     bg:SetBackdropBorderColor(0.15, 0.15, 0.15, 0.8)
 
     local header = bg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then header:SetFont(f, 9, fl or "") end end
     header:SetPoint("TOPLEFT", bg, "TOPLEFT", 8, -6)
     header:SetText("|cFFFFAA00" .. L["header_raidframe_spell_list"] .. "|r")
 
@@ -844,6 +880,7 @@ local function BuildProfileOverview(parent)
     clearBtn:SetBackdropColor(0.3, 0.05, 0.05, 0.85)
     clearBtn:SetBackdropBorderColor(0.6, 0.15, 0.15, 1)
     local clearBtnLabel = clearBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then clearBtnLabel:SetFont(f, 9, fl or "") end end
     clearBtnLabel:SetPoint("CENTER", clearBtn, "CENTER", 0, 0)
     clearBtnLabel:SetText(L["opt_raidframe_clear_all_profiles"])
     clearBtnLabel:SetTextColor(1, 0.5, 0.5, 1)
@@ -872,6 +909,7 @@ local function BuildProfileOverview(parent)
     refreshBtn:SetBackdropColor(0.05, 0.15, 0.3, 0.85)
     refreshBtn:SetBackdropBorderColor(0.2, 0.5, 0.8, 1)
     local refreshBtnLabel = refreshBtn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then refreshBtnLabel:SetFont(f, 9, fl or "") end end
     refreshBtnLabel:SetPoint("CENTER", refreshBtn, "CENTER", 0, 0)
     refreshBtnLabel:SetText(L["opt_raidframe_reload"] or "Reload")
     refreshBtnLabel:SetTextColor(0.5, 0.8, 1, 1)
@@ -931,8 +969,9 @@ local function BuildProfileOverview(parent)
                         local spellName = (ok and name and name ~= "") and (" - " .. name) or ""
                         local paTag = ""
                         local okPA, isPA = pcall(C_UnitAuras.AuraIsPrivate, id)
-                        if okPA and isPA then paTag = " |cFFBB66FF[PA]|r" end
-                        tinsert(rows, { kind = "spell", text = tostring(id) .. spellName .. paTag })
+                        local isPABool = okPA and isPA or false
+                        if isPABool then paTag = " |cFFBB66FF[PA]|r" end
+                        tinsert(rows, { kind = "spell", text = tostring(id) .. spellName .. paTag, spellID = id, isPA = isPABool })
                     end
                 end
             end
@@ -975,6 +1014,7 @@ local function BuildProfileOverview(parent)
                 local row = CreateFrame("Frame", nil, scrollContent)
                 row:SetHeight(LINE_H)
                 local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                do local f, _, fl = GameFontNormalSmall:GetFont(); if f then lbl:SetFont(f, 9, fl or "") end end
                 lbl:SetJustifyH("LEFT")
                 lbl:SetPoint("RIGHT", row, "RIGHT", -4, 0)
                 row.label = lbl
@@ -989,14 +1029,17 @@ local function BuildProfileOverview(parent)
             row.label:ClearAllPoints()
             if d.kind == "raid" then
                 row.label:SetPoint("LEFT", row, "LEFT", 4, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
                 row.label:SetText(d.text)
                 row.label:SetTextColor(1, 0.67, 0, 1)
             elseif d.kind == "boss" then
                 row.label:SetPoint("LEFT", row, "LEFT", 16, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
                 row.label:SetText(d.text)
                 row.label:SetTextColor(0.53, 0.8, 1, 1)
             else
                 row.label:SetPoint("LEFT", row, "LEFT", 28, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
                 row.label:SetText(d.text)
                 row.label:SetTextColor(1, 1, 1, 0.85)
             end
@@ -1026,6 +1069,186 @@ local function BuildProfileOverview(parent)
     return bg
 end
 
+-- ── PA Picker Panel ───────────────────────────────────────────────────────
+-- Displayed on the right side of the "Raidframe" sub-tab.
+-- Shows only Private Aura spells from the boss profiles, grouped by Raid > Boss.
+-- Each spell has a checkbox that writes its ID into paSpellIDs.
+local function BuildPAPickerPanel(parent)
+    local LINE_H   = 20
+    local SBAR_W   = 8
+    local HEADER_H = 30
+
+    local bg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    bg:SetBackdrop({
+        bgFile   = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    bg:SetBackdropColor(0.05, 0.05, 0.05, 0.6)
+    bg:SetBackdropBorderColor(0.15, 0.15, 0.15, 0.8)
+
+    local hdr = bg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then hdr:SetFont(f, 9, fl or "") end end
+    hdr:SetPoint("TOPLEFT", bg, "TOPLEFT", 8, -8)
+    hdr:SetText("|cFFBB66FFPrivate Auras|r  |cFF888888" .. L["pa_picker_header_desc"] .. "|r")
+
+    local sep = bg:CreateTexture(nil, "ARTWORK")
+    sep:SetColorTexture(0.25, 0.25, 0.25, 0.8)
+    sep:SetHeight(1)
+    sep:SetPoint("TOPLEFT",  bg, "TOPLEFT",  4, -(HEADER_H - 2))
+    sep:SetPoint("TOPRIGHT", bg, "TOPRIGHT", -4, -(HEADER_H - 2))
+
+    -- Build data: only PA spells, grouped Raid > Boss
+    local function buildData()
+        local rows = {}
+        local s        = RRT.Settings and RRT.Settings.RaidFrame
+        local profiles = s and s.debuffProfiles
+        if not profiles then return rows end
+
+        local raidKeys = {}
+        for k in pairs(profiles) do tinsert(raidKeys, k) end
+        table.sort(raidKeys)
+
+        local anyPA = false
+        for _, rk in ipairs(raidKeys) do
+            local bossKeys = s.raidBossOrder and s.raidBossOrder[rk]
+            if not bossKeys or #bossKeys == 0 then
+                bossKeys = {}
+                for k in pairs(profiles[rk]) do tinsert(bossKeys, k) end
+                table.sort(bossKeys)
+            end
+
+            local raidBlock = {}
+            for _, bk in ipairs(bossKeys) do
+                local spells    = profiles[rk][bk]
+                local bossBlock = {}
+                for i = 1, #spells do
+                    local id = spells[i]
+                    if id and id > 0 then
+                        local okPA, isPA = pcall(C_UnitAuras.AuraIsPrivate, id)
+                        if okPA and isPA then
+                            local ok, nm = pcall(C_Spell.GetSpellName, id)
+                            local label = (ok and nm and nm ~= "") and nm or tostring(id)
+                            tinsert(bossBlock, { kind = "spell", text = label, spellID = id })
+                            anyPA = true
+                        end
+                    end
+                end
+                if #bossBlock > 0 then
+                    tinsert(raidBlock, { kind = "boss", text = EJBossLabel(bk) })
+                    for _, r in ipairs(bossBlock) do tinsert(raidBlock, r) end
+                end
+            end
+            if #raidBlock > 0 then
+                tinsert(rows, { kind = "raid", text = EJRaidLabel(rk) })
+                for _, r in ipairs(raidBlock) do tinsert(rows, r) end
+            end
+        end
+
+        if not anyPA then
+            tinsert(rows, { kind = "empty", text = "|cFF666666" .. L["pa_picker_empty"] .. "|r" })
+        end
+        return rows
+    end
+
+    -- ScrollFrame
+    local scrollFrame = CreateFrame("ScrollFrame", nil, bg)
+    scrollFrame:SetPoint("TOPLEFT",     bg, "TOPLEFT",     4,             -HEADER_H)
+    scrollFrame:SetPoint("BOTTOMRIGHT", bg, "BOTTOMRIGHT", -(SBAR_W + 6),  4)
+    scrollFrame:EnableMouseWheel(true)
+    scrollFrame:SetScript("OnMouseWheel", function(self, delta)
+        local cur = self:GetVerticalScroll()
+        self:SetVerticalScroll(math.max(0, math.min(self:GetVerticalScrollRange(), cur - delta * 30)))
+    end)
+
+    local scrollContent = CreateFrame("Frame", nil, scrollFrame)
+    scrollContent:SetWidth(1)
+    scrollContent:SetHeight(1)
+    scrollFrame:SetScrollChild(scrollContent)
+
+    local sbar = MakeScrollBar(scrollFrame)
+    sbar:SetPoint("TOPRIGHT",    bg, "TOPRIGHT",    -4, -HEADER_H)
+    sbar:SetPoint("BOTTOMRIGHT", bg, "BOTTOMRIGHT", -4,  4)
+    sbar:SetWidth(SBAR_W)
+
+    local rowPool = {}
+
+    local function Rebuild()
+        local contentW = scrollFrame:GetWidth()
+        if contentW < 10 then return end
+        scrollContent:SetWidth(contentW)
+
+        local rows = buildData()
+        for i, d in ipairs(rows) do
+            if not rowPool[i] then
+                local row = CreateFrame("Frame", nil, scrollContent)
+                row:SetHeight(LINE_H)
+                local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                do local f, _, fl = GameFontNormalSmall:GetFont(); if f then lbl:SetFont(f, 9, fl or "") end end
+                lbl:SetJustifyH("LEFT")
+                row.label = lbl
+                local chk = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
+                chk:SetSize(16, 16)
+                chk:SetPoint("LEFT", row, "LEFT", 28, 0)
+                chk:Hide()
+                row.check = chk
+                rowPool[i] = row
+            end
+            local row = rowPool[i]
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", scrollContent, "TOPLEFT", 0, -((i - 1) * LINE_H))
+            row:SetWidth(contentW)
+            row:Show()
+
+            row.check:Hide()
+            row.label:ClearAllPoints()
+
+            if d.kind == "raid" then
+                row.label:SetPoint("LEFT",  row, "LEFT",  4, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+                row.label:SetText(d.text)
+                row.label:SetTextColor(1, 0.67, 0, 1)
+            elseif d.kind == "boss" then
+                row.label:SetPoint("LEFT",  row, "LEFT",  16, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+                row.label:SetText(d.text)
+                row.label:SetTextColor(0.53, 0.8, 1, 1)
+            elseif d.kind == "spell" then
+                row.check:Show()
+                row.check:SetChecked(IsInPAFilter(d.spellID))
+                local sid = d.spellID
+                row.check:SetScript("OnClick", function(self)
+                    TogglePAFilter(sid, self:GetChecked())
+                end)
+                row.label:SetPoint("LEFT",  row.check, "RIGHT", 4, 0)
+                row.label:SetPoint("RIGHT", row,       "RIGHT", -4, 0)
+                row.label:SetText(d.text)
+                row.label:SetTextColor(1, 1, 1, 0.9)
+            else -- empty
+                row.label:SetPoint("LEFT",  row, "LEFT",  8, 0)
+                row.label:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+                row.label:SetText(d.text)
+                row.label:SetTextColor(0.5, 0.5, 0.5, 1)
+            end
+        end
+        for i = #rows + 1, #rowPool do rowPool[i]:Hide() end
+        scrollContent:SetHeight(math.max(1, #rows * LINE_H))
+        scrollFrame:UpdateScrollChildRect()
+    end
+
+    bg:SetScript("OnShow", function()
+        if scrollFrame:GetWidth() < 10 then
+            C_Timer.After(0, Rebuild)
+        else
+            Rebuild()
+        end
+    end)
+    bg:HookScript("OnSizeChanged", function() Rebuild() end)
+    bg.Refresh = Rebuild
+
+    return bg
+end
+
 -- Export
 RRT_NS.UI = RRT_NS.UI or {}
 RRT_NS.UI.Options = RRT_NS.UI.Options or {}
@@ -1034,6 +1257,7 @@ RRT_NS.UI.Options.RaidFrame = {
     BuildAllOptions           = BuildAllOptions,
     BuildProfileOptions       = BuildProfileOptions,
     BuildProfileOverview      = BuildProfileOverview,
+    BuildPAPickerPanel        = BuildPAPickerPanel,
     BuildCallback             = BuildMidnightCallback,
     SetMenuRefreshCallback    = SetMenuRefreshCallback,
 }

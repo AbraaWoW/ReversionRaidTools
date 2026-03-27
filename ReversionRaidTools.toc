@@ -13,6 +13,7 @@ Libs\libs.xml
 # Core - Infrastructure
 Core\ReversionRaidTools.lua
 Core\Locale.lua
+Core\RaidData.lua
 Core\Functions.lua
 Core\Media.lua
 Core\Comms.lua

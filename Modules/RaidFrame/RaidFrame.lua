@@ -6,6 +6,57 @@ RRT_NS.RaidFrame = RaidFrame
 local MAX_DBF_SLOTS = 8
 RaidFrame.MAX_DBF_SLOTS = MAX_DBF_SLOTS
 
+-- PopulateDefaults — reads from RRT_NS.RaidData (Core/RaidData.lua).
+-- raidKey = "Extension - Instance"  (e.g. "Midnight - The Voidspire")
+-- bossKey = "id (Name)"  (e.g. "3176 (Imperator Averzian)"), or boss.name if id == 0
+function RaidFrame:PopulateDefaults()
+    local data = RRT_NS.RaidData
+    if not data then return end
+    local s = RRT.Settings.RaidFrame
+
+    for _, ext in ipairs(data) do
+        for _, inst in ipairs(ext.instances or {}) do
+            local raidKey = ext.extension .. " - " .. inst.instance
+            if not s.debuffProfiles[raidKey] then s.debuffProfiles[raidKey] = {} end
+            if not s.raidBossOrder[raidKey]  then s.raidBossOrder[raidKey]  = {} end
+
+            -- Auto-populate zone ID from RaidData if not already mapped
+            if inst.instanceID and inst.instanceID > 0 then
+                s.raidZoneIDs = s.raidZoneIDs or {}
+                if not s.raidZoneIDs[inst.instanceID] then
+                    s.raidZoneIDs[inst.instanceID] = raidKey
+                end
+            end
+
+            for _, boss in ipairs(inst.bosses or {}) do
+                local bossKey = (boss.id and boss.id > 0) and (tostring(boss.id) .. " (" .. boss.name .. ")") or boss.name
+                if not s.debuffProfiles[raidKey][bossKey] then
+                    s.debuffProfiles[raidKey][bossKey] = {}
+                    tinsert(s.raidBossOrder[raidKey], bossKey)
+                end
+                local existing = s.debuffProfiles[raidKey][bossKey]
+                local seen = {}
+                for _, id in ipairs(existing) do seen[id] = true end
+                for _, sp in ipairs(boss.spells or {}) do
+                    if sp.spellID and not seen[sp.spellID] then
+                        tinsert(existing, sp.spellID)
+                        seen[sp.spellID] = true
+                    end
+                end
+            end
+        end
+    end
+
+    -- Set active raid to the first entry if not yet set
+    if s.activeRaid == "" then
+        local enc = data[1]
+        if enc and enc.instances and enc.instances[1] then
+            s.activeRaid = enc.extension .. " - " .. enc.instances[1].instance
+        end
+    end
+    _spellIDCache = nil
+end
+
 function RaidFrame:Init()
     if not RRT.Settings.RaidFrame then
         RRT.Settings.RaidFrame = {}
@@ -50,6 +101,10 @@ function RaidFrame:Init()
     if s.paSpellIDs     == nil then s.paSpellIDs     = ""    end
     if not s.position then
         s.position = { point = "TOPLEFT", x = 200, y = -200 }
+    end
+    -- Auto-populate default boss profiles on first install
+    if next(s.debuffProfiles) == nil then
+        self:PopulateDefaults()
     end
 end
 

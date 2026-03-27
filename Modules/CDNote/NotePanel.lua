@@ -217,9 +217,9 @@ local function BuildCDNotePanel(panel)
                     popup.textBox:SetText(vmrt.Note.Text1)
                     popup.textBox:SetFocus()
                 else
-                    DEFAULT_CHAT_FRAME:AddMessage("|cFFBB66FFRRT:|r MRT non détecté ou note vide.")
+                    DEFAULT_CHAT_FRAME:AddMessage("|cFFBB66FFRRT:|r " .. L["cdnote_mrt_not_found"])
                 end
-            end, 180, BTN_H, "Import depuis MRT (auto)")
+            end, 180, BTN_H, L["cdnote_import_mrt"])
             btnMRT:SetTemplate(options_button_template)
             btnMRT:SetPoint("BOTTOMLEFT", popup, "BOTTOMLEFT", 10, BTN_PAD + BTN_H + BTN_PAD)
         end

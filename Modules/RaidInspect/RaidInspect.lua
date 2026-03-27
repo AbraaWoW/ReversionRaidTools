@@ -408,6 +408,7 @@ local function BuildRaidInspectPanel(panel)
     btnScan:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
     btnScan:SetBackdropBorderColor(tR, tG, tB, 1)
     local btnLbl = btnScan:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then btnLbl:SetFont(f, 9, fl or "") end end
     btnLbl:SetPoint("CENTER")
     btnLbl:SetText("Scan Raid")
     btnLbl:SetTextColor(0.9, 0.9, 0.9, 1)
@@ -422,6 +423,7 @@ local function BuildRaidInspectPanel(panel)
 
     -- ── Status label ──────────────────────────────────────────────────────────
     local statusLbl = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then statusLbl:SetFont(f, 9, fl or "") end end
     statusLbl:SetPoint("LEFT", btnScan, "RIGHT", 10, 0)
     statusLbl:SetTextColor(0.65, 0.65, 0.65, 1)
     statusLbl:SetText("Click Scan Raid to request data from group members.")
@@ -434,6 +436,7 @@ local function BuildRaidInspectPanel(panel)
     }
     for _, h in ipairs(headers) do
         local fs = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then fs:SetFont(f, 9, fl or "") end end
         fs:SetPoint("TOPLEFT", panel, "TOPLEFT", h.x, headerY)
         fs:SetText(h.label)
         fs:SetTextColor(0.75, 0.75, 0.75, 1)
@@ -538,6 +541,7 @@ local function BuildRaidInspectPanel(panel)
         -- ── Left section: 2-line layout ──────────────────────────────────────
         -- Line 1 (top): Name, class-colored
         local nameLbl = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then nameLbl:SetFont(f, 9, fl or "") end end
         nameLbl:SetWidth(LEFT_W - 6)
         nameLbl:SetJustifyH("LEFT")
         nameLbl:SetPoint("TOPLEFT", line, "TOPLEFT", 4, -4)
@@ -550,6 +554,7 @@ local function BuildRaidInspectPanel(panel)
         line.specIcon = specIcon
 
         local ilvlLbl = line:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then ilvlLbl:SetFont(f, 9, fl or "") end end
         ilvlLbl:SetJustifyH("LEFT")
         ilvlLbl:SetPoint("LEFT", specIcon, "RIGHT", 4, 0)
         line.ilvlLbl = ilvlLbl

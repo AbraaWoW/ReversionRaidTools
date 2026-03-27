@@ -157,11 +157,12 @@ local function BuildRaidUI(parent)
     -- Build content for General panel
     BuildGeneralContent(panels["general"])
 
-    -- Build content for Midnight panel (2 sub-tabs: Raidframe / Profiles)
+    -- Build content for Midnight panel (3 sub-tabs: Raidframe / PA Filter / Profiles)
     local function BuildMidnightContent(panel)
         local subDefs = {
-            { name = L["midnight_frame"],    key = "raidframe" },
-            { name = L["midnight_profiles"], key = "profiles"  },
+            { name = L["midnight_frame"],     key = "raidframe" },
+            { name = L["midnight_pa_filter"], key = "pafilter"  },
+            { name = L["midnight_profiles"],  key = "profiles"  },
         }
         local subPanels = BuildSubNav(panel, subDefs)
         local subMenuH  = window_height - SUB_BTN_HEIGHT - SUB_BTN_PAD * 2 - 4 - 10
@@ -170,6 +171,10 @@ local function BuildRaidUI(parent)
         DF:BuildMenu(subPanels["raidframe"], Opt.BuildAllOptions(), 10, -10, subMenuH, false,
             options_text_template, options_dropdown_template, options_switch_template,
             true, options_slider_template, options_button_template, Opt.BuildCallback())
+
+        local paPicker = Opt.BuildPAPickerPanel(subPanels["pafilter"])
+        paPicker:SetPoint("TOPLEFT",     subPanels["pafilter"], "TOPLEFT",     8,  0)
+        paPicker:SetPoint("BOTTOMRIGHT", subPanels["pafilter"], "BOTTOMRIGHT", -8, 4)
 
         -- Profiles: left menu (fixed 370px) + right overview panel
         local MENU_W = 370

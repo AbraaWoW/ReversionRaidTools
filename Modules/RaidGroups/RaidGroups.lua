@@ -383,7 +383,7 @@ function RG:BuildPanel(parent)
         local e = CreateFrame("EditBox", nil, p, "BackdropTemplate")
         e:SetSize(w or EDIT_W, h or EDIT_H)
         e:SetAutoFocus(false)
-        e:SetFontObject(GameFontNormalSmall)
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then e:SetFont(f, 9, fl or "") end end
         e:SetTextInsets(3, 20, 1, 1)
         e:SetBackdrop({
             bgFile   = "Interface\\Buttons\\WHITE8X8",
@@ -447,6 +447,7 @@ function RG:BuildPanel(parent)
             math.floor(c[1]*255+0.5), math.floor(c[2]*255+0.5), math.floor(c[3]*255+0.5))
         local groupName = "Group " .. g
         local hdr = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then hdr:SetFont(f, 9, fl or "") end end
         hdr:SetPoint("TOPLEFT", parent, "TOPLEFT", gx, gy)
         hdr:SetText("|cFF" .. hex .. groupName .. "|r")
         hdr._groupName = groupName
@@ -485,6 +486,7 @@ function RG:BuildPanel(parent)
 
     -- ── "Not in list" column ─────────────────────────────────────
     local nilHdr = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then nilHdr:SetFont(f, 9, fl or "") end end
     nilHdr:SetPoint("TOPLEFT", parent, "TOPLEFT", NIL_X, TOP_Y)
     nilHdr._groupName = "Not in list"
     RG._groupHeaders[#RG._groupHeaders+1] = nilHdr
@@ -545,6 +547,7 @@ function RG:BuildPanel(parent)
 
     -- ── Presets panel ─────────────────────────────────────────────
     local preHdr = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    do local f, _, fl = GameFontNormalSmall:GetFont(); if f then preHdr:SetFont(f, 9, fl or "") end end
     preHdr:SetPoint("TOPLEFT", parent, "TOPLEFT", PRE_X, TOP_Y)
     preHdr._groupName = "Presets (Quick Load)"
     RG._groupHeaders[#RG._groupHeaders+1] = preHdr
@@ -576,6 +579,7 @@ function RG:BuildPanel(parent)
         row:SetBackdropBorderColor(0, 0, 0, 0)
 
         local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then lbl:SetFont(f, 9, fl or "") end end
         lbl:SetPoint("LEFT",  row, "LEFT",  4, 0)
         lbl:SetPoint("RIGHT", row, "RIGHT", -18, 0)
         lbl:SetJustifyH("LEFT")
@@ -677,6 +681,7 @@ function RG:BuildPanel(parent)
         ApplyNormal(btn)
 
         local lbl = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then lbl:SetFont(f, 9, fl or "") end end
         lbl:SetPoint("CENTER")
         lbl:SetText(label)
         lbl:SetTextColor(0.9, 0.9, 0.9, 1)
@@ -713,6 +718,7 @@ function RG:BuildPanel(parent)
 
     local function MakeSeparator(text)
         local sep = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then sep:SetFont(f, 9, fl or "") end end
         sep:SetPoint("TOPLEFT", parent, "TOPLEFT", BTN_X, nextBtnY)
         sep:SetWidth(BTN_W)
         sep:SetJustifyH("LEFT")
@@ -811,6 +817,7 @@ function RG:BuildPanel(parent)
         savePopup:SetBackdropBorderColor(c[1], c[2], c[3], 1)
 
         local popLbl = savePopup:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then popLbl:SetFont(f, 9, fl or "") end end
         popLbl:SetPoint("TOPLEFT", savePopup, "TOPLEFT", 10, -10)
         popLbl:SetText("Preset name:")
 
@@ -818,7 +825,7 @@ function RG:BuildPanel(parent)
         entry:SetSize(182, 22)
         entry:SetPoint("TOPLEFT", popLbl, "BOTTOMLEFT", 0, -4)
         entry:SetAutoFocus(true)
-        entry:SetFontObject(GameFontNormalSmall)
+        do local f, _, fl = GameFontNormalSmall:GetFont(); if f then entry:SetFont(f, 9, fl or "") end end
         entry:SetTextInsets(4, 4, 1, 1)
         entry:SetBackdrop(BACKDROP)
         entry:SetBackdropColor(0.06, 0.06, 0.06, 1)
